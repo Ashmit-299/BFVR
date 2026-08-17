@@ -14,9 +14,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://restaurant-frontend.onrender.com
+        value: '["https://restaurant-frontend.onrender.com"]'
       - key: ALGORITHM
-        value: "HS256"
+        value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "15"
       - key: REFRESH_TOKEN_EXPIRE_DAYS
@@ -29,5 +29,7 @@ services:
     buildCommand: cd frontend && npm install && npm run build
     startCommand: cd frontend && npm start
     envVars:
+      - key: NODE_VERSION
+        value: "18"
       - key: NEXT_PUBLIC_API_URL
         value: https://restaurant-backend.onrender.com
