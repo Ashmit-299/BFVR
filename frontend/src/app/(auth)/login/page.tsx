@@ -50,7 +50,7 @@ export default function LoginPage() {
             <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-1.5">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="input-field" placeholder="owner@restaurant.com" required />
+                className="input-field" placeholder="Enter your email" required />
             </div>
 
             <div className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
@@ -69,13 +69,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 sm:mt-6 p-3 sm:p-4 bg-amber-50/80 rounded-xl border border-amber-100/50 animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
-            <p className="text-[10px] sm:text-xs text-amber-600 font-semibold mb-2">Demo Credentials:</p>
-            <p className="text-[10px] sm:text-xs text-gray-600">Owner: owner@restaurant.com / owner123</p>
-            <p className="text-[10px] sm:text-xs text-gray-600">Manager: manager@restaurant.com / manager123</p>
-          </div>
-
-          <div className="mt-4 text-center animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+          <div className="mt-4 text-center animate-fade-in-up" style={{ animationDelay: "0.25s" }}>
             <p className="text-[10px] sm:text-xs text-gray-400">Only existing users can create new accounts (Owner only)</p>
           </div>
         </div>
