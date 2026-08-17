@@ -2,8 +2,9 @@ services:
   - type: web
     name: restaurant-backend
     runtime: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: python seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -16,6 +17,7 @@ services:
   - type: web
     name: restaurant-frontend
     runtime: node
+    rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
