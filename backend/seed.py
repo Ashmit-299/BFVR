@@ -25,17 +25,17 @@ async def seed():
 
         db.add(User(
             name="Restaurant Owner",
-            email="owner@restaurant.com",
-            password_hash=hash_password("owner123"),
+            email="owner@baba.com",
+            password_hash=hash_password("baba2580"),
             role="OWNER",
-            phone="9999999999",
+            phone="9559327592",
         ))
         db.add(User(
             name="Restaurant Manager",
-            email="manager@restaurant.com",
-            password_hash=hash_password("manager123"),
+            email="manager@ashmit.com",
+            password_hash=hash_password("ashmit2580"),
             role="MANAGER",
-            phone="8888888888",
+            phone="8874409773",
         ))
 
         for name, typ, desc in [
