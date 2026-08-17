@@ -1,25 +1,23 @@
-import asyncio
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.database import async_session, engine, Base
+from app.database import sync_engine, SyncSession, Base
 from app.models.user import User
 from app.models.category import TransactionCategory
 from app.models.restaurant_setting import RestaurantSetting
 from app.utils.auth import hash_password
 
 
-async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def seed():
+    Base.metadata.create_all(sync_engine)
 
-    async with async_session() as db:
+    with SyncSession() as db:
         from sqlalchemy import select
 
-        existing = await db.execute(select(User).where(User.email == "owner@restaurant.com"))
-        if existing.scalar_one_or_none():
+        existing = db.execute(select(User).where(User.email == "owner@restaurant.com")).scalar_one_or_none()
+        if existing:
             print("Seed data already exists. Skipping.")
             return
 
@@ -76,11 +74,11 @@ async def seed():
         for key, value, desc in default_settings:
             db.add(RestaurantSetting(key=key, value=value, description=desc))
 
-        await db.commit()
+        db.commit()
         print("Seed data created successfully!")
         print("Owner: owner@restaurant.com / owner123")
         print("Manager: manager@restaurant.com / manager123")
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    seed()

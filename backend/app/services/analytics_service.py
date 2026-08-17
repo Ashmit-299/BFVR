@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, case, extract
 from app.models.transaction import Transaction
 from app.models.expense import Expense
+from app.models.category import TransactionCategory
 
 
 async def get_revenue_by_period(db: AsyncSession, start: date, end: date, period: str = "day") -> list[dict]:
@@ -178,9 +179,30 @@ async def get_payment_method_stats(db: AsyncSession, start: date, end: date) -> 
     return [{"method": row.payment_method, "total": float(row.total), "count": row.count} for row in rows]
 
 
+async def _get_expenses_by_category(db: AsyncSession, start: date, end: date) -> list[dict]:
+    result = await db.execute(
+        select(
+            TransactionCategory.name,
+            func.sum(Expense.amount).label("total"),
+        )
+        .join(TransactionCategory, Expense.category_id == TransactionCategory.id)
+        .where(
+            and_(
+                Expense.expense_date >= start,
+                Expense.expense_date <= end,
+                Expense.status == "ACTIVE",
+            )
+        )
+        .group_by(TransactionCategory.name)
+        .order_by(func.sum(Expense.amount).desc())
+    )
+    rows = result.all()
+    return [{"category": row.name, "total": float(row.total)} for row in rows]
+
+
 async def get_expense_alerts(db: AsyncSession, current_start: date, current_end: date, prev_start: date, prev_end: date) -> list[dict]:
-    current = await get_expenses_by_category(db, current_start, current_end)
-    previous = await get_expenses_by_category(db, prev_start, prev_end)
+    current = await _get_expenses_by_category(db, current_start, current_end)
+    previous = await _get_expenses_by_category(db, prev_start, prev_end)
 
     prev_map = {p["category"]: p["total"] for p in previous}
     alerts = []
