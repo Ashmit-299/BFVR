@@ -4,6 +4,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+from sqlalchemy import select
 from app.database import engine, async_session, Base
 from app.models.user import User
 from app.models.category import TransactionCategory
@@ -16,37 +17,22 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as db:
-        from sqlalchemy import select
 
-        existing = await db.execute(select(User).where(User.email == "owner@restaurant.com"))
-        if existing.scalar_one_or_none():
-            print("Seed data already exists. Skipping.")
-            return
+        # --- Users ---
+        for email, name, password, role, phone in [
+            ("owner@baba.com", "Restaurant Owner", "baba2580", "OWNER", "9559327592"),
+            ("manager@ashmit.com", "Restaurant Manager", "ashmit2580", "MANAGER", "8874409773"),
+        ]:
+            exists = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+            if not exists:
+                db.add(User(name=name, email=email, password_hash=hash_password(password), role=role, phone=phone))
 
-        db.add(User(
-            name="Restaurant Owner",
-            email="owner@baba.com",
-            password_hash=hash_password("baba2580"),
-            role="OWNER",
-            phone="9559327592",
-        ))
-        db.add(User(
-            name="Restaurant Manager",
-            email="manager@ashmit.com",
-            password_hash=hash_password("ashmit2580"),
-            role="MANAGER",
-            phone="8874409773",
-        ))
-
+        # --- Categories ---
         for name, typ, desc in [
             ("Food Sales", "INCOME", "Daily food and beverage sales"),
             ("Beverage Sales", "INCOME", "Tea, coffee, cold drinks"),
             ("Takeaway Sales", "INCOME", "Parcel and takeaway orders"),
             ("Delivery Sales", "INCOME", "Online delivery orders"),
-        ]:
-            db.add(TransactionCategory(name=name, type=typ, description=desc, is_default=True))
-
-        for name, typ, desc in [
             ("Vegetables", "EXPENSE", "Fresh vegetable purchases"),
             ("Dairy", "EXPENSE", "Milk, paneer, curd, butter"),
             ("Kirana", "EXPENSE", "Rice, flour, oil, spices, grocery"),
@@ -59,19 +45,28 @@ async def seed():
             ("Packaging", "EXPENSE", "Plates, cups, napkins, parcel bags"),
             ("Miscellaneous", "EXPENSE", "Other miscellaneous expenses"),
         ]:
-            db.add(TransactionCategory(name=name, type=typ, description=desc, is_default=True))
+            exists = (await db.execute(
+                select(TransactionCategory).where(TransactionCategory.name == name, TransactionCategory.type == typ)
+            )).scalar_one_or_none()
+            if not exists:
+                db.add(TransactionCategory(name=name, type=typ, description=desc, is_default=True))
 
+        # --- Restaurant Settings ---
         for key, value, desc in [
-            ("restaurant_name", "My Restaurant", "Name of the restaurant"),
+            ("restaurant_name", "Baba Restaurant", "Name of the restaurant"),
             ("tagline", "Financial Management", "Subtitle shown in sidebar"),
             ("currency_symbol", "₹", "Currency symbol for display"),
         ]:
-            db.add(RestaurantSetting(key=key, value=value, description=desc))
+            exists = (await db.execute(
+                select(RestaurantSetting).where(RestaurantSetting.key == key)
+            )).scalar_one_or_none()
+            if not exists:
+                db.add(RestaurantSetting(key=key, value=value, description=desc))
 
         await db.commit()
-        print("Seed data created successfully!")
-        print("Owner: owner@restaurant.com / owner123")
-        print("Manager: manager@restaurant.com / manager123")
+        print("Seed completed.")
+        print("Owner: owner@baba.com / baba2580")
+        print("Manager: manager@ashmit.com / ashmit2580")
 
 
 if __name__ == "__main__":
