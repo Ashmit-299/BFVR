@@ -130,19 +130,8 @@ async function run() {
   process.exit(0);
 }
 
-// Seed menus/users/settings into the given business — safe to re-run:
-// existing users (and their passwords) are never touched, menu upserts only.
-export async function seedAll(businessId) {
-  // Users (only create missing ones — never reset existing passwords)
-  for (const u of USERS) {
-    const exists = await User.findOne({ username: u.username });
-    if (!exists) {
-      await User.create({ ...u, businessId, passwordHash: await User.hashPassword(u.password) });
-      console.log(`Created user ${u.username} (${u.role})`);
-    }
-  }
-
-  // Menu (demo items live on the default business only)
+// Seed the full PDF menu for a business — safe to re-run (upsert by name+category).
+export async function seedMenu(businessId) {
   let created = 0;
   for (let i = 0; i < MENU.length; i++) {
     const [category, name, half, full, price] = MENU[i];
@@ -159,7 +148,24 @@ export async function seedAll(businessId) {
     const res = await MenuItem.updateOne({ businessId, name, category }, { $set: update }, { upsert: true });
     if (res.upsertedCount) created++;
   }
-  console.log(`Menu: ${created} new items seeded, ${MENU.length} total in menu`);
+  return { created, total: MENU.length };
+}
+
+// Seed menus/users/settings into the given business — safe to re-run:
+// existing users (and their passwords) are never touched, menu upserts only.
+export async function seedAll(businessId) {
+  // Users (only create missing ones — never reset existing passwords)
+  for (const u of USERS) {
+    const exists = await User.findOne({ username: u.username });
+    if (!exists) {
+      await User.create({ ...u, businessId, passwordHash: await User.hashPassword(u.password) });
+      console.log(`Created user ${u.username} (${u.role})`);
+    }
+  }
+
+  // Menu (demo items live on the default business only)
+  const { created, total } = await seedMenu(businessId);
+  console.log(`Menu: ${created} new items seeded, ${total} total in menu`);
 
   // Settings
   const settings = await Setting.get(businessId);

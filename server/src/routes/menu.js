@@ -1,24 +1,19 @@
 import { Router } from 'express';
-import multer from 'multer';
 import MenuItem, { CATEGORIES } from '../models/MenuItem.js';
 import { requireAuth, requirePerm } from '../middleware/auth.js';
-import { parseMenuPdf } from '../lib/menuPdf.js';
+import { seedMenu } from '../seed.js';
 
 const router = Router();
 router.use(requireAuth);
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf' || /\.pdf$/i.test(file.originalname)) cb(null, true);
-    else cb(new Error('Only PDF files are allowed'));
-  },
-});
-
 router.get('/', requirePerm('menu:view'), async (req, res, next) => {
   try {
-    const items = await MenuItem.find({ businessId: req.businessId }).sort({ category: 1, sortOrder: 1, name: 1 });
+    let items = await MenuItem.find({ businessId: req.businessId }).sort({ category: 1, sortOrder: 1, name: 1 });
+    // Old account with an empty menu → seed the full default menu once.
+    if (items.length === 0) {
+      await seedMenu(req.businessId);
+      items = await MenuItem.find({ businessId: req.businessId }).sort({ category: 1, sortOrder: 1, name: 1 });
+    }
     res.json({ items: items.map((i) => i.toClient()), categories: CATEGORIES });
   } catch (err) {
     next(err);
@@ -87,63 +82,6 @@ router.delete('/:id', requirePerm('menu:manage'), async (req, res, next) => {
     const item = await MenuItem.findOneAndDelete({ _id: req.params.id, businessId: req.businessId });
     if (!item) return res.status(404).json({ error: 'Item not found' });
     res.json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Smart upload: parse a menu-card PDF and return structured items for review.
-router.post('/parse-pdf', requirePerm('menu:manage'), (req, res, next) => {
-  upload.single('file')(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    if (!req.file) return res.status(400).json({ error: 'No PDF file uploaded' });
-    try {
-      const result = await parseMenuPdf(req.file.buffer);
-      if (result.items.length === 0) {
-        return res.status(422).json({
-          error: 'No items found in PDF. Make sure it is a text-based menu card (not a scanned image).',
-        });
-      }
-      res.json(result);
-    } catch (e) {
-      next(e);
-    }
-  });
-});
-
-// Bulk import: save reviewed items from the smart-upload flow.
-router.post('/bulk', requirePerm('menu:manage'), async (req, res, next) => {
-  try {
-    const { items } = req.body || {};
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'items array is required' });
-    }
-    if (items.length > 500) return res.status(400).json({ error: 'Too many items (max 500)' });
-    const docs = [];
-    for (const it of items) {
-      const name = String(it.name || '').trim();
-      const category = String(it.category || '').trim();
-      if (!name || !category) continue;
-      const half = it.halfPrice != null && it.halfPrice !== '' ? Number(it.halfPrice) : null;
-      const full = it.fullPrice != null && it.fullPrice !== '' ? Number(it.fullPrice) : null;
-      const price = it.price != null && it.price !== '' ? Number(it.price) : null;
-      let doc = { businessId: req.businessId, name, category, sortOrder: Number(it.sortOrder) || 0 };
-      if (half != null && full != null && half >= 0 && full >= 0 && half <= full) {
-        doc.halfPrice = half;
-        doc.fullPrice = full;
-        doc.price = null;
-      } else if (price != null && price >= 0) {
-        doc.price = price;
-        doc.halfPrice = null;
-        doc.fullPrice = null;
-      } else {
-        continue; // skip invalid
-      }
-      docs.push(doc);
-    }
-    if (docs.length === 0) return res.status(400).json({ error: 'No valid items to import' });
-    const created = await MenuItem.insertMany(docs, { ordered: false });
-    res.status(201).json({ imported: created.length });
   } catch (err) {
     next(err);
   }

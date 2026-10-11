@@ -194,3 +194,26 @@ export const IconUpload = (p) => (
     <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
   </Svg>
 );
+
+// Fork & spoon — restaurant brand mark
+export const IconRestaurant = ({ size = 20, className }) => (
+  <svg
+    className={className}
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M7 2v8" />
+    <path d="M5 2v5a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V2" />
+    <path d="M7 12v10" />
+    <path d="M18 2c-1.7 0-3 2.2-3 5s1.3 4 3 4" />
+    <path d="M18 11v11" />
+  </svg>
+);

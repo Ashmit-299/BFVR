@@ -38,14 +38,6 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
-  // Self-serve signup: creates a brand-new business + owner admin and signs them in.
-  const register = useCallback(async ({ businessName, name, username, password }) => {
-    const data = await post('/api/auth/register', { businessName, name, username, password });
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
-  }, []);
-
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -54,7 +46,7 @@ export function AuthProvider({ children }) {
   const can = useCallback((perm) => !!user && user.permissions.includes(perm), [user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, can }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, can }}>
       {children}
     </AuthContext.Provider>
   );

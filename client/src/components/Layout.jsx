@@ -17,6 +17,7 @@ import {
   IconPower,
   IconSync,
   IconChevron,
+  IconRestaurant,
 } from './Icons.jsx';
 
 const NAV = [
@@ -159,7 +160,9 @@ export default function Layout() {
           </button>
 
           <div className="brand">
-            <div className="brand-logo">VS</div>
+            <div className="brand-logo">
+              <IconRestaurant size={20} />
+            </div>
             <div className="brand-text">
               <div className="brand-name">{brandName}</div>
               <div className="brand-sub">{brandTag}</div>
@@ -210,7 +213,9 @@ export default function Layout() {
 
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="brand">
-          <div className="brand-logo">VS</div>
+          <div className="brand-logo">
+            <IconRestaurant size={20} />
+          </div>
           <div className="brand-text">
             <div className="brand-name">{brandName}</div>
             <div className="brand-sub">{brandTag}</div>

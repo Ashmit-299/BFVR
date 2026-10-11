@@ -139,6 +139,10 @@ router.put('/:id', async (req, res, next) => {
     // scoped lookup: a user of another business is simply "not found"
     const user = await User.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!user) return res.status(404).json({ error: 'User not found' });
+    // The single super-admin account is immutable — seeded, cannot be edited.
+    if (user.role === 'superadmin') {
+      return res.status(403).json({ error: 'The super admin account cannot be edited' });
+    }
     const { name, role, active, password } = req.body || {};
 
     if (role && role !== user.role) {

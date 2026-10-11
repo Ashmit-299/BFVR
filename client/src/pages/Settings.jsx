@@ -123,18 +123,22 @@ export default function Settings() {
         </div>
 
         <div className="card">
-          <div className="chart-head">
-            <h3>{t('pw_title')}</h3>
-          </div>
-          <form onSubmit={changePassword}>
-            <label className="field-label">{t('pw_old')}</label>
-            <input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} required />
-            <label className="field-label">{t('pw_new')}</label>
-            <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} />
-            <button className="btn btn-primary btn-block">{t('pw_btn')}</button>
-          </form>
+          {user.role !== 'superadmin' && (
+            <>
+              <div className="chart-head">
+                <h3>{t('pw_title')}</h3>
+              </div>
+              <form onSubmit={changePassword}>
+                <label className="field-label">{t('pw_old')}</label>
+                <input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} required />
+                <label className="field-label">{t('pw_new')}</label>
+                <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} />
+                <button className="btn btn-primary btn-block">{t('pw_btn')}</button>
+              </form>
+            </>
+          )}
 
-          <div className="chart-head" style={{ marginTop: 24 }}>
+          <div className="chart-head" style={{ marginTop: user.role !== 'superadmin' ? 24 : 0 }}>
             <h3>{t('acc_title')}</h3>
           </div>
           <div className="account-box">

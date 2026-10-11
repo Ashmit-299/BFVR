@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import { getApiBase, needsServerSetup } from '../lib/api.js';
 import ServerSetup from '../components/ServerSetup.jsx';
+import { IconRestaurant } from '../components/Icons.jsx';
 
 export default function Login() {
   const { login } = useAuth();
@@ -42,7 +43,9 @@ export default function Login() {
         >
           {lang === 'hi' ? 'EN' : 'हिं'}
         </button>
-        <div className="login-logo">VS</div>
+        <div className="login-logo">
+          <IconRestaurant size={34} />
+        </div>
         <h1>{t('brand_name')}</h1>
         <p className="login-tag">{t('login_tag')}</p>
 
@@ -70,10 +73,6 @@ export default function Login() {
             {busy ? t('login_checking') : t('login_btn')}
           </button>
         </form>
-
-        <div className="login-register">
-          <Link to="/register">{t('login_register')}</Link>
-        </div>
       </div>
     </div>
   );

@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext.jsx';
 import { useLang } from './context/LangContext.jsx';
 import Layout from './components/Layout.jsx';
 import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
 import POS from './pages/POS.jsx';
 import Orders from './pages/Orders.jsx';
 import Analytics from './pages/Analytics.jsx';
@@ -12,12 +11,15 @@ import Menu from './pages/Menu.jsx';
 import Users from './pages/Users.jsx';
 import Overview from './pages/Overview.jsx';
 import Settings from './pages/Settings.jsx';
+import { IconRestaurant } from './components/Icons.jsx';
 
 function Boot() {
   const { t } = useLang();
   return (
     <div className="boot-screen">
-      <div className="boot-logo">VS</div>
+      <div className="boot-logo">
+        <IconRestaurant size={34} />
+      </div>
       <p>{t('common_loading')}</p>
     </div>
   );
@@ -34,7 +36,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route
         path="/"
         element={

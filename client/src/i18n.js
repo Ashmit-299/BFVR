@@ -29,7 +29,6 @@ export const dict = {
     login_btn: 'लॉगिन करें',
     login_checking: 'जाँच हो रही है…',
     login_failed: 'लॉगिन विफल',
-    login_register: 'नया व्यापार रजिस्टर करें →',
 
     // server setup (packaged app — APK/EXE)
     srv_label: 'सर्वर का पता (URL)',
@@ -40,22 +39,6 @@ export const dict = {
     srv_ok: 'सर्वर जुड़ गया ✓ — अब लॉगिन करें',
     srv_fail: 'सर्वर नहीं मिला — पता सही है और इंटरनेट चालू है, जाँचें',
     srv_required: 'पहले सर्वर का पता जोड़ें',
-
-    // register
-    reg_title: 'नया व्यापार रजिस्टर करें',
-    reg_sub: 'आपका अपना डैशबोर्ड — बिलिंग, हिसाब और रिपोर्ट',
-    reg_biz_name: 'व्यापार / दुकान का नाम',
-    reg_biz_name_ph: 'जैसे शर्मा किराना स्टोर',
-    reg_owner_name: 'आपका नाम',
-    reg_owner_name_ph: 'जैसे रमेश शर्मा',
-    reg_username_ph: 'लॉगिन के लिए यूज़रनेम बनाएं',
-    reg_btn: 'रजिस्टर करें',
-    reg_working: 'बन रहा है…',
-    reg_failed: 'रजिस्ट्रेशन विफल',
-    reg_all_required: 'सभी फ़ील्ड भरें',
-    reg_short_password: 'पासवर्ड कम से कम 6 अक्षर का हो',
-    reg_fresh_note: 'रजिस्टर करते ही आपको एक खाली डैशबोर्ड मिलेगा — सिर्फ़ आपके व्यापार का डेटा।',
-    reg_have_account: 'पहले से खाता है? लॉगिन करें',
 
     // layout
     brand_name: 'व्यापार साथी',
@@ -302,20 +285,10 @@ export const dict = {
     menu_deleted: 'आइटम हटा दिया',
     menu_delete_confirm: '"{name}" मेन्यू से हटाएँ?',
     menu_load_err: 'मेन्यू लोड नहीं हुआ: {err}',
-    menu_pdf_upload: 'PDF से मेन्यू अपलोड',
-    menu_pdf_reading: 'PDF पढ़ रहे हैं…',
-    menu_pdf_too_big: 'PDF 10 MB से बड़ा है',
-    menu_pdf_review: '{n} आइटम मिले — जाँचकर इम्पोर्ट करें',
-    menu_pdf_review_hint: 'नाम, श्रेणी और कीमत जाँच लें। गलत लाइनें हटा दें। फिर इम्पोर्ट दबाएँ।',
-    menu_import: 'इम्पोर्ट',
-    menu_importing: 'इम्पोर्ट हो रहा है…',
-    menu_import_confirm: '{n} इम्पोर्ट करें',
-    menu_imported: '{n} आइटम इम्पोर्ट हो गए ✓',
 
     // users
     users_title: 'यूज़र प्रबंधन',
     users_add: '+ नया यूज़र',
-    users_help: 'अनुमतियाँ: सुपर एडमिन — सब कुछ + एडमिन बनाना · एडमिन — मेन्यू, बिल, खर्च, सेटिंग्स, मैनेजर बनाना · मैनेजर — केवल नया बिल, भुगतान, खर्च और एनालिटिक्स',
     col_name: 'नाम',
     col_username: 'यूज़रनेम',
     col_role: 'भूमिका',
@@ -435,7 +408,6 @@ export const dict = {
     login_btn: 'Log in',
     login_checking: 'Signing in…',
     login_failed: 'Login failed',
-    login_register: 'Register a new business →',
 
     // server setup (packaged app — APK/EXE)
     srv_label: 'Server address (URL)',
@@ -446,22 +418,6 @@ export const dict = {
     srv_ok: 'Server connected ✓ — now log in',
     srv_fail: 'Server not found — check the address and that internet is on',
     srv_required: 'Add the server address first',
-
-    // register
-    reg_title: 'Register your business',
-    reg_sub: 'Your own dashboard — billing, accounts & reports',
-    reg_biz_name: 'Business / shop name',
-    reg_biz_name_ph: 'e.g. Sharma Kirana Store',
-    reg_owner_name: 'Your name',
-    reg_owner_name_ph: 'e.g. Ramesh Sharma',
-    reg_username_ph: 'Choose a username to log in',
-    reg_btn: 'Register',
-    reg_working: 'Creating…',
-    reg_failed: 'Registration failed',
-    reg_all_required: 'Please fill in all fields',
-    reg_short_password: 'Password must be at least 6 characters',
-    reg_fresh_note: 'You get an empty dashboard — only your business data, nothing else.',
-    reg_have_account: 'Already have an account? Log in',
 
     // layout
     brand_name: 'Vyapar Saathi',
@@ -708,20 +664,10 @@ export const dict = {
     menu_deleted: 'Item removed',
     menu_delete_confirm: 'Remove "{name}" from the menu?',
     menu_load_err: 'Could not load menu: {err}',
-    menu_pdf_upload: 'Upload menu PDF',
-    menu_pdf_reading: 'Reading PDF…',
-    menu_pdf_too_big: 'PDF is larger than 10 MB',
-    menu_pdf_review: '{n} items found — review and import',
-    menu_pdf_review_hint: 'Check name, category and prices. Remove wrong lines. Then press Import.',
-    menu_import: 'Import',
-    menu_importing: 'Importing…',
-    menu_import_confirm: 'Import {n} items',
-    menu_imported: '{n} items imported ✓',
 
     // users
     users_title: 'User Management',
     users_add: '+ New user',
-    users_help: 'Permissions: Super Admin — everything + create admins · Admin — menu, bills, expenses, settings, create managers · Manager — new bills, payments, expenses and analytics only',
     col_name: 'Name',
     col_username: 'Username',
     col_role: 'Role',

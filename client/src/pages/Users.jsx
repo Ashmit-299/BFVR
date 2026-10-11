@@ -88,8 +88,6 @@ export default function Users() {
         </button>
       </div>
 
-      <div className="role-help card">{t('users_help')}</div>
-
       <div className="table-card">
         <table className="table">
           <thead>
@@ -116,13 +114,17 @@ export default function Users() {
                 <td>{u.active ? <span className="green">{t('st_active')}</span> : <span className="red">{t('st_inactive')}</span>}</td>
                 <td className="muted">{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('en-IN') : '—'}</td>
                 <td className="right row-actions">
-                  <button className="btn btn-sm" onClick={() => openEdit(u)}>
-                    <IconPencil size={16} />
-                  </button>
-                  {u.id !== me.id && (
-                    <button className="btn btn-sm" onClick={() => toggleActive(u)}>
-                      {u.active ? t('btn_deactivate') : t('btn_activate')}
-                    </button>
+                  {u.role !== 'superadmin' && (
+                    <>
+                      <button className="btn btn-sm" onClick={() => openEdit(u)}>
+                        <IconPencil size={16} />
+                      </button>
+                      {u.id !== me.id && (
+                        <button className="btn btn-sm" onClick={() => toggleActive(u)}>
+                          {u.active ? t('btn_deactivate') : t('btn_activate')}
+                        </button>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>
