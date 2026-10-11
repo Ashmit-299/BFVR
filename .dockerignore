@@ -1,0 +1,9 @@
+node_modules
+client/dist
+client/android/app/build
+desktop/node_modules
+desktop/dist
+.git
+*.log
+.env
+server/.env

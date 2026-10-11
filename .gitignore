@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# Build outputs (regenerate with npm run build:apk / build:exe)
+desktop/release/
+desktop/app/
+client/android/app/build/
+client/android/.gradle/

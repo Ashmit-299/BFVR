@@ -1,0 +1,5 @@
+# Keystore used to sign the release APK (client/android/keystore/vs-release.jks).
+# Losing this file means future APK updates cannot be installed over old ones —
+# keep a backup. Passwords are also referenced in app/build.gradle.
+*.jks
+*.keystore

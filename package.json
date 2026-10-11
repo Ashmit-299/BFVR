@@ -1,0 +1,25 @@
+{
+  "name": "baba-family-restaurant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Baba Family Restaurant — offline-capable POS, billing, expenses & analytics (React + Node + MongoDB)",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,pink \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "build:shell": "npm run build:shell -w client",
+    "build:apk": "npm run build:shell && cd client/android && gradlew assembleDebug",
+    "build:exe": "npm run build:shell && npm run dist --prefix desktop",
+    "start": "npm run start -w server",
+    "seed": "npm run seed -w server",
+    "test:api": "node scripts/api-test.mjs",
+    "test:browser": "node scripts/browser-test.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "puppeteer-core": "^25.13.0"
+  }
+}

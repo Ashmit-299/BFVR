@@ -1,0 +1,19 @@
+# Render free-tier blueprint — https://render.com
+# Connect your GitHub repo → New → Blueprint → pick this file.
+services:
+  - type: web
+    name: vyapar-saathi
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 5050
+      - key: MONGO_URI
+        sync: false # paste your MongoDB Atlas connection string in the dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        value: "*"
+      - key: AUTO_SEED
+        value: "1"

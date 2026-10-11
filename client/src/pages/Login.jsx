@@ -1,0 +1,87 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useLang } from '../context/LangContext.jsx';
+import { getApiBase, needsServerSetup } from '../lib/api.js';
+import ServerSetup from '../components/ServerSetup.jsx';
+
+export default function Login() {
+  const { login } = useAuth();
+  const { t, lang, setLang } = useLang();
+  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (needsServerSetup() && !getApiBase()) {
+      setError(t('srv_required'));
+      return;
+    }
+    setBusy(true);
+    try {
+      await login(username, password);
+      navigate('/pos', { replace: true });
+    } catch (err) {
+      setError(err.message || t('login_failed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <button
+          className="lang-btn login-lang"
+          onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+          title="हिंदी / English"
+        >
+          {lang === 'hi' ? 'EN' : 'हिं'}
+        </button>
+        <div className="login-logo">VS</div>
+        <h1>{t('brand_name')}</h1>
+        <p className="login-tag">{t('login_tag')}</p>
+
+        <ServerSetup />
+
+        <form onSubmit={submit}>
+          <label>{t('login_username')}</label>
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder={t('login_username_ph')}
+            autoFocus
+            autoComplete="username"
+          />
+          <label>{t('login_password')}</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
+          {error && <div className="form-error">{error}</div>}
+          <button className="btn btn-primary btn-block" disabled={busy}>
+            {busy ? t('login_checking') : t('login_btn')}
+          </button>
+        </form>
+
+        <div className="login-hint">
+          <b>{t('login_demo')}</b>
+          <span>superadmin / Super@1234</span>
+          <span>admin / Admin@1234</span>
+          <span>manager / Manager@1234</span>
+        </div>
+
+        <div className="login-register">
+          <Link to="/register">{t('login_register')}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
