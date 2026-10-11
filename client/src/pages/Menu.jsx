@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { get, post, put, del } from '../lib/api.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { get, post, put, del, getApiBase, getToken } from '../lib/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import Modal from '../components/Modal.jsx';
 import { inr } from '../lib/format.js';
-import { IconPencil, IconTrash } from '../components/Icons.jsx';
+import { IconPencil, IconTrash, IconUpload } from '../components/Icons.jsx';
 
 const EMPTY_FORM = { name: '', category: '', pricing: 'portions', halfPrice: '', fullPrice: '', price: '', sortOrder: '' };
 
@@ -18,6 +18,12 @@ export default function Menu() {
   const [modal, setModal] = useState(null); // null | 'new' | item
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
+
+  // smart PDF upload
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [parsed, setParsed] = useState(null); // null | { items: [...] }
+  const [importing, setImporting] = useState(false);
 
   const load = async () => {
     try {
@@ -54,6 +60,73 @@ export default function Menu() {
   const openNew = () => {
     setForm(EMPTY_FORM);
     setModal('new');
+  };
+
+  // ---- smart upload ----
+  const pickPdf = () => fileRef.current?.click();
+
+  const onFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.push(t('menu_pdf_too_big'), 'error');
+      return;
+    }
+    setUploading(true);
+    try {
+      const base = getApiBase();
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${base}/api/menu/parse-pdf`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setParsed({ items: data.items.map((it, i) => ({ ...it, key: i })) });
+    } catch (err) {
+      toast.push(err.message, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const updateParsed = (key, patch) => {
+    setParsed((p) => ({ ...p, items: p.items.map((it) => (it.key === key ? { ...it, ...patch } : it)) }));
+  };
+
+  const removeParsed = (key) => {
+    setParsed((p) => ({ ...p, items: p.items.filter((it) => it.key !== key) }));
+  };
+
+  const confirmImport = async () => {
+    if (!parsed?.items.length) return;
+    setImporting(true);
+    try {
+      const res = await post(
+        '/api/menu/bulk',
+        {
+          items: parsed.items.map(({ name, category, halfPrice, fullPrice, price, sortOrder }) => ({
+            name,
+            category,
+            halfPrice,
+            fullPrice,
+            price,
+            sortOrder,
+          })),
+        },
+        { label: t('menu_import') }
+      );
+      toast.push(t('menu_imported', { n: res.imported ?? parsed.items.length }), 'success');
+      setParsed(null);
+      load();
+    } catch (err) {
+      toast.push(err.message, 'error');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const openEdit = (item) => {
@@ -129,11 +202,19 @@ export default function Menu() {
       <div className="page-head">
         <h2>{t('menu_title', { n: items.length })}</h2>
         {can('menu:manage') && (
-          <button className="btn btn-primary" onClick={openNew}>
-            {t('menu_add')}
-          </button>
+          <div className="page-actions">
+            <button className="btn" onClick={pickPdf} disabled={uploading}>
+              <IconUpload size={16} />
+              {uploading ? t('menu_pdf_reading') : t('menu_pdf_upload')}
+            </button>
+            <button className="btn btn-primary" onClick={openNew}>
+              {t('menu_add')}
+            </button>
+          </div>
         )}
       </div>
+
+      <input ref={fileRef} type="file" accept="application/pdf,.pdf" style={{ display: 'none' }} onChange={onFile} />
 
       {!can('menu:manage') && <div className="info-banner">{t('menu_readonly')}</div>}
 
@@ -270,6 +351,104 @@ export default function Menu() {
               onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
               placeholder="0"
             />
+          </div>
+        </Modal>
+      )}
+
+      {parsed && (
+        <Modal
+          title={t('menu_pdf_review', { n: parsed.items.length })}
+          onClose={() => setParsed(null)}
+          width={680}
+          footer={
+            <>
+              <button className="btn" onClick={() => setParsed(null)}>
+                {t('common_cancel')}
+              </button>
+              <button className="btn btn-primary" disabled={importing || parsed.items.length === 0} onClick={confirmImport}>
+                {importing ? t('menu_importing') : t('menu_import_confirm', { n: parsed.items.length })}
+              </button>
+            </>
+          }
+        >
+          <p className="muted small" style={{ marginTop: 0 }}>
+            {t('menu_pdf_review_hint')}
+          </p>
+          <div className="table-scroll" style={{ maxHeight: 420 }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>{t('menu_name')}</th>
+                  <th>{t('menu_cat')}</th>
+                  <th className="right">{t('col_half')}</th>
+                  <th className="right">{t('col_full_rate')}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {parsed.items.map((it) => {
+                  const portions = it.halfPrice != null && it.fullPrice != null;
+                  return (
+                    <tr key={it.key}>
+                      <td>
+                        <input
+                          value={it.name}
+                          onChange={(e) => updateParsed(it.key, { name: e.target.value })}
+                          style={{ minWidth: 140 }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          value={it.category}
+                          onChange={(e) => updateParsed(it.key, { category: e.target.value })}
+                          style={{ minWidth: 90 }}
+                        />
+                      </td>
+                      {portions ? (
+                        <>
+                          <td className="right">
+                            <input
+                              type="number"
+                              min="0"
+                              value={it.halfPrice}
+                              onChange={(e) => updateParsed(it.key, { halfPrice: e.target.value === '' ? null : Number(e.target.value) })}
+                              style={{ width: 72 }}
+                            />
+                          </td>
+                          <td className="right">
+                            <input
+                              type="number"
+                              min="0"
+                              value={it.fullPrice}
+                              onChange={(e) => updateParsed(it.key, { fullPrice: e.target.value === '' ? null : Number(e.target.value) })}
+                              style={{ width: 72 }}
+                            />
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="right muted">—</td>
+                          <td className="right">
+                            <input
+                              type="number"
+                              min="0"
+                              value={it.price ?? ''}
+                              onChange={(e) => updateParsed(it.key, { price: e.target.value === '' ? null : Number(e.target.value) })}
+                              style={{ width: 72 }}
+                            />
+                          </td>
+                        </>
+                      )}
+                      <td className="right">
+                        <button className="btn btn-sm btn-danger" onClick={() => removeParsed(it.key)}>
+                          <IconTrash size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </Modal>
       )}

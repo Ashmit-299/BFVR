@@ -302,6 +302,15 @@ export const dict = {
     menu_deleted: 'आइटम हटा दिया',
     menu_delete_confirm: '"{name}" मेन्यू से हटाएँ?',
     menu_load_err: 'मेन्यू लोड नहीं हुआ: {err}',
+    menu_pdf_upload: 'PDF से मेन्यू अपलोड',
+    menu_pdf_reading: 'PDF पढ़ रहे हैं…',
+    menu_pdf_too_big: 'PDF 10 MB से बड़ा है',
+    menu_pdf_review: '{n} आइटम मिले — जाँचकर इम्पोर्ट करें',
+    menu_pdf_review_hint: 'नाम, श्रेणी और कीमत जाँच लें। गलत लाइनें हटा दें। फिर इम्पोर्ट दबाएँ।',
+    menu_import: 'इम्पोर्ट',
+    menu_importing: 'इम्पोर्ट हो रहा है…',
+    menu_import_confirm: '{n} इम्पोर्ट करें',
+    menu_imported: '{n} आइटम इम्पोर्ट हो गए ✓',
 
     // users
     users_title: 'यूज़र प्रबंधन',
@@ -699,6 +708,15 @@ export const dict = {
     menu_deleted: 'Item removed',
     menu_delete_confirm: 'Remove "{name}" from the menu?',
     menu_load_err: 'Could not load menu: {err}',
+    menu_pdf_upload: 'Upload menu PDF',
+    menu_pdf_reading: 'Reading PDF…',
+    menu_pdf_too_big: 'PDF is larger than 10 MB',
+    menu_pdf_review: '{n} items found — review and import',
+    menu_pdf_review_hint: 'Check name, category and prices. Remove wrong lines. Then press Import.',
+    menu_import: 'Import',
+    menu_importing: 'Importing…',
+    menu_import_confirm: 'Import {n} items',
+    menu_imported: '{n} items imported ✓',
 
     // users
     users_title: 'User Management',

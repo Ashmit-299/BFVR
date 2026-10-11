@@ -186,3 +186,11 @@ export const IconCard = (p) => (
     <path d="M6 15h4.5" />
   </Svg>
 );
+
+export const IconUpload = (p) => (
+  <Svg {...p}>
+    <path d="M12 16V4" />
+    <path d="m7 9 5-5 5 5" />
+    <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+  </Svg>
+);
