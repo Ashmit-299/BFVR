@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import User from '../models/User.js';
+import Order from '../models/Order.js';
+import Expense from '../models/Expense.js';
 import { requireAuth, requirePerm } from '../middleware/auth.js';
 import { canManageRole, ROLES } from '../lib/permissions.js';
 
@@ -10,6 +12,97 @@ router.get('/', async (req, res, next) => {
   try {
     const users = await User.find({ businessId: req.businessId }).sort({ role: 1, name: 1 });
     res.json({ users: users.map((u) => u.toClient()) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/users/overview — superadmin only.
+// Returns role counts plus per-user usage analytics (bills, billed amount,
+// payments recorded, expenses added, last activity) so the owner can see
+// how the admins/managers they created are actually using the system.
+router.get('/overview', async (req, res, next) => {
+  try {
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Only the super admin can view this overview' });
+    }
+    const bid = req.businessId;
+
+    const [users, orderAgg, payAgg, expAgg, activityAgg] = await Promise.all([
+      User.find({ businessId: bid }).sort({ role: 1, name: 1 }),
+      // bills created per user
+      Order.aggregate([
+        { $match: { businessId: bid } },
+        { $group: { _id: '$createdBy.id', orders: { $sum: 1 }, billed: { $sum: '$total' } } },
+      ]),
+      // payments recorded per user
+      Order.aggregate([
+        { $match: { businessId: bid, 'payments.by.id': { $exists: true } } },
+        { $unwind: '$payments' },
+        { $match: { 'payments.by.id': { $exists: true } } },
+        { $group: { _id: '$payments.by.id', payments: { $sum: 1 }, paid: { $sum: '$payments.amount' } } },
+      ]),
+      // expenses added per user
+      Expense.aggregate([
+        { $match: { businessId: bid } },
+        { $group: { _id: '$createdBy.id', expenses: { $sum: 1 }, expenseTotal: { $sum: '$amount' } } },
+      ]),
+      // most recent action per user (bill placed or expense added)
+      Order.aggregate([
+        { $match: { businessId: bid, 'createdBy.id': { $exists: true } } },
+        { $group: { _id: '$createdBy.id', last: { $max: '$placedAt' } } },
+      ]),
+    ]);
+
+    const byId = (rows) => new Map(rows.map((r) => [String(r._id), r]));
+    const oMap = byId(orderAgg);
+    const pMap = byId(payAgg);
+    const eMap = byId(expAgg);
+    const aMap = byId(activityAgg);
+
+    const overview = users.map((u) => {
+      const id = u._id.toString();
+      const o = oMap.get(id) || {};
+      const p = pMap.get(id) || {};
+      const e = eMap.get(id) || {};
+      const a = aMap.get(id) || {};
+      return {
+        id,
+        name: u.name,
+        username: u.username,
+        role: u.role,
+        active: u.active,
+        createdAt: u.createdAt,
+        lastLoginAt: u.lastLoginAt || null,
+        orders: o.orders || 0,
+        billed: o.billed || 0,
+        payments: p.payments || 0,
+        paid: p.paid || 0,
+        expenses: e.expenses || 0,
+        expenseTotal: e.expenseTotal || 0,
+        lastActivityAt: a.last || null,
+      };
+    });
+
+    const counts = { total: users.length, active: 0, superadmin: 0, admin: 0, manager: 0 };
+    for (const u of users) {
+      counts[u.role] = (counts[u.role] || 0) + 1;
+      if (u.active) counts.active++;
+    }
+
+    const totals = overview.reduce(
+      (acc, r) => ({
+        orders: acc.orders + r.orders,
+        billed: acc.billed + r.billed,
+        payments: acc.payments + r.payments,
+        paid: acc.paid + r.paid,
+        expenses: acc.expenses + r.expenses,
+        expenseTotal: acc.expenseTotal + r.expenseTotal,
+      }),
+      { orders: 0, billed: 0, payments: 0, paid: 0, expenses: 0, expenseTotal: 0 }
+    );
+
+    res.json({ counts, totals, users: overview });
   } catch (err) {
     next(err);
   }

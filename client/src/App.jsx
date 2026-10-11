@@ -10,6 +10,7 @@ import Analytics from './pages/Analytics.jsx';
 import Expenses from './pages/Expenses.jsx';
 import Menu from './pages/Menu.jsx';
 import Users from './pages/Users.jsx';
+import Overview from './pages/Overview.jsx';
 import Settings from './pages/Settings.jsx';
 
 function Boot() {
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="expenses" element={<Expenses />} />
         <Route path="menu" element={<Menu />} />
         <Route path="users" element={<Users />} />
+        <Route path="overview" element={<Overview />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

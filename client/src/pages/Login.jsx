@@ -71,13 +71,6 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="login-hint">
-          <b>{t('login_demo')}</b>
-          <span>superadmin / Super@1234</span>
-          <span>admin / Admin@1234</span>
-          <span>manager / Manager@1234</span>
-        </div>
-
         <div className="login-register">
           <Link to="/register">{t('login_register')}</Link>
         </div>

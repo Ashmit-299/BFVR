@@ -43,6 +43,16 @@ export const IconChart = (p) => (
   </Svg>
 );
 
+// Building / organisation — used for the super-admin overview (all businesses
+// and the admins that run them).
+export const IconBuilding = (p) => (
+  <Svg {...p}>
+    <rect x="4" y="3.5" width="10" height="17" rx="1.5" />
+    <path d="M14 9.5h6v11h-6" />
+    <path d="M7 7.5h1.5M7 11h1.5M7 14.5h1.5M17 13h1.5M17 16.5h1.5" />
+  </Svg>
+);
+
 export const IconWallet = (p) => (
   <Svg {...p}>
     <path d="M3.5 8.5A2.5 2.5 0 0 1 6 6h11.5a2 2 0 0 1 2 2" />

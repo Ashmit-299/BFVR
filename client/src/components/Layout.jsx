@@ -11,6 +11,7 @@ import {
   IconWallet,
   IconBook,
   IconUsers,
+  IconBuilding,
   IconSliders,
   IconMenu,
   IconPower,
@@ -25,6 +26,8 @@ const NAV = [
   { to: '/expenses', Icon: IconWallet, key: 'nav_expenses', perm: 'expenses:view' },
   { to: '/menu', Icon: IconBook, key: 'nav_menu', perm: 'menu:view' },
   { to: '/users', Icon: IconUsers, key: 'nav_users', perm: 'users:manage' },
+  // superadmin only — see how the admins/managers they created are using the system
+  { to: '/overview', Icon: IconBuilding, key: 'nav_overview', perm: 'users:manage', role: 'superadmin' },
   { to: '/settings', Icon: IconSliders, key: 'nav_settings', perm: null },
 ];
 
@@ -93,7 +96,9 @@ export default function Layout() {
     };
   }, [toast, t]);
 
-  const items = NAV.filter((n) => !n.perm || can(n.perm));
+  const items = NAV.filter(
+    (n) => (!n.perm || can(n.perm)) && (!n.role || user.role === n.role)
+  );
 
   const restaurant = settings?.restaurant;
   const brandName =

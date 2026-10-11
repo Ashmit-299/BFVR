@@ -29,7 +29,6 @@ export const dict = {
     login_btn: 'लॉगिन करें',
     login_checking: 'जाँच हो रही है…',
     login_failed: 'लॉगिन विफल',
-    login_demo: 'डेमो अकाउंट',
     login_register: 'नया व्यापार रजिस्टर करें →',
 
     // server setup (packaged app — APK/EXE)
@@ -73,6 +72,7 @@ export const dict = {
     nav_expenses: 'रोज़ का खर्च',
     nav_menu: 'मेन्यू',
     nav_users: 'यूज़र',
+    nav_overview: 'ओवरव्यू',
     nav_settings: 'सेटिंग्स',
     logout: 'लॉगआउट',
     online: 'ऑनलाइन',
@@ -330,6 +330,28 @@ export const dict = {
     u_load_err: 'यूज़र लोड नहीं हुए: {err}',
     users_no_perm: 'इस पेज के लिए अनुमति नहीं है।',
 
+    // overview (superadmin)
+    ov_title: 'ओवरव्यू — आपकी टीम',
+    ov_help: 'आपने जो एडमिन/मैनेजर बनाए हैं, वे सिस्टम कैसे इस्तेमाल कर रहे हैं — कितने बिल, कितना पैसा, कितने खर्च और आख़िरी गतिविधि।',
+    ov_admins: 'एडमिन',
+    ov_admins_hint: 'आपने बनाए',
+    ov_managers: 'मैनेजर',
+    ov_managers_hint: 'काउंटर स्टाफ़',
+    ov_total_users: 'कुल यूज़र',
+    ov_active_n: '{n} सक्रिय',
+    ov_total_billed: 'कुल बिल',
+    ov_orders_n: '{n} बिल',
+    ov_col_orders: 'बिल',
+    ov_col_billed: 'कुल राशि',
+    ov_col_payments: 'भुगतान',
+    ov_col_expenses: 'खर्च',
+    ov_col_last_activity: 'आख़िरी गतिविधि',
+    ov_payments_n: '{n} भुगतान',
+    ov_expenses_n: '{n} एंट्री',
+    ov_empty: 'अभी कोई एडमिन/मैनेजर नहीं बनाया गया।',
+    ov_load_err: 'ओवरव्यू लोड नहीं हुआ: {err}',
+    ov_no_perm: 'यह पेज केवल सुपर एडमिन के लिए है।',
+
     // settings
     set_title: 'सेटिंग्स',
     set_restaurant: 'व्यापार की जानकारी',
@@ -404,7 +426,6 @@ export const dict = {
     login_btn: 'Log in',
     login_checking: 'Signing in…',
     login_failed: 'Login failed',
-    login_demo: 'Demo accounts',
     login_register: 'Register a new business →',
 
     // server setup (packaged app — APK/EXE)
@@ -448,6 +469,7 @@ export const dict = {
     nav_expenses: 'Daily Expenses',
     nav_menu: 'Menu',
     nav_users: 'Users',
+    nav_overview: 'Overview',
     nav_settings: 'Settings',
     logout: 'Log out',
     online: 'Online',
@@ -704,6 +726,28 @@ export const dict = {
     u_req: 'Name and username are required',
     u_load_err: 'Could not load users: {err}',
     users_no_perm: 'You do not have permission for this page.',
+
+    // overview (superadmin)
+    ov_title: 'Overview — your team',
+    ov_help: 'How the admins/managers you created are using the system — how many bills, how much money, how many expenses, and their last activity.',
+    ov_admins: 'Admins',
+    ov_admins_hint: 'created by you',
+    ov_managers: 'Managers',
+    ov_managers_hint: 'counter staff',
+    ov_total_users: 'Total users',
+    ov_active_n: '{n} active',
+    ov_total_billed: 'Total billed',
+    ov_orders_n: '{n} bills',
+    ov_col_orders: 'Bills',
+    ov_col_billed: 'Amount',
+    ov_col_payments: 'Payments',
+    ov_col_expenses: 'Expenses',
+    ov_col_last_activity: 'Last activity',
+    ov_payments_n: '{n} payments',
+    ov_expenses_n: '{n} entries',
+    ov_empty: 'No admins/managers created yet.',
+    ov_load_err: 'Could not load overview: {err}',
+    ov_no_perm: 'This page is for the super admin only.',
 
     // settings
     set_title: 'Settings',
