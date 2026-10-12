@@ -4,6 +4,7 @@ const orderItemSchema = new mongoose.Schema(
   {
     item: { type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem' },
     name: { type: String, required: true },
+    nameEn: { type: String, default: '' },
     category: { type: String, default: '' },
     portion: { type: String, enum: ['half', 'full', 'single'], required: true },
     price: { type: Number, required: true },
@@ -80,6 +81,7 @@ orderSchema.methods.toClient = function () {
     items: this.items.map((it) => ({
       item: it.item ? it.item.toString() : null,
       name: it.name,
+      nameEn: it.nameEn || '',
       category: it.category,
       portion: it.portion,
       price: it.price,

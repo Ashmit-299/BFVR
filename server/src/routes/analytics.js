@@ -50,6 +50,7 @@ async function rangeStats(businessId, from, to) {
       {
         $group: {
           _id: '$items.name',
+          nameEn: { $first: '$items.nameEn' },
           qty: { $sum: '$items.qty' },
           revenue: { $sum: { $multiply: ['$items.price', '$items.qty'] } },
         },
@@ -89,7 +90,7 @@ async function rangeStats(businessId, from, to) {
     }),
     { revenue: 0, billed: 0, orders: 0, expenses: 0, net: 0, methods: { ...EMPTY_METHODS } }
   );
-  return { rows, totals, expenseByCategory: expByCat.map((e) => ({ category: e._id, amount: e.amount })), topDishes: topDishes.map((t) => ({ name: t._id, qty: t.qty, revenue: t.revenue })) };
+  return { rows, totals, expenseByCategory: expByCat.map((e) => ({ category: e._id, amount: e.amount })), topDishes: topDishes.map((t) => ({ name: t._id, nameEn: t.nameEn || '', qty: t.qty, revenue: t.revenue })) };
 }
 
 // GET /api/analytics/daily?day=YYYY-MM-DD

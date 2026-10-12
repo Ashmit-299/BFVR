@@ -5,7 +5,7 @@ import { connectDB } from './config/db.js';
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env') });
 import User from './models/User.js';
-import MenuItem from './models/MenuItem.js';
+import MenuItem, { CATEGORY_EN } from './models/MenuItem.js';
 import Setting from './models/Setting.js';
 import { migrateTenancy } from './lib/multitenant.js';
 
@@ -114,6 +114,88 @@ const MENU = [
   ['सुप', 'पनीर मन्चूरियन सुप', null, null, 80],
 ];
 
+// English names for the standard menu card — stored on each item (nameEn) so
+// the UI language toggle can show the whole menu in English.
+const NAME_EN = {
+  'वेज चाउमीन': 'Veg Chowmein',
+  'सेजवान चाउमीन': 'Schezwan Chowmein',
+  'मन्चूरियन चाउमीन': 'Manchurian Chowmein',
+  'पनीर चाउमीन': 'Paneer Chowmein',
+  'वेज राइस': 'Veg Fried Rice',
+  'सेजवान राइस': 'Schezwan Fried Rice',
+  'मन्चूरियन राइस': 'Manchurian Fried Rice',
+  'पनीर राइस': 'Paneer Fried Rice',
+  'पनीर मन्चूरियन राइस / ग्रेवी': 'Paneer Manchurian Rice / Gravy',
+  'मन्चूरियन ग्रेवी': 'Manchurian Gravy',
+  'चिल्ली पनीर': 'Chilli Paneer',
+  'फिंगर चिल्ली': 'Chilli Finger',
+  'चिल्ली पटैटो': 'Chilli Potato',
+  'वेज बर्गर': 'Veg Burger',
+  'पनीर बर्गर': 'Paneer Burger',
+  'पेपर डोसा': 'Paper Dosa',
+  'मसाला डोसा': 'Masala Dosa',
+  'मैसूर मसाला डोसा': 'Mysore Masala Dosa',
+  'चाइनीज़ डोसा': 'Chinese Dosa',
+  'पनीर मसाला डोसा': 'Paneer Masala Dosa',
+  'मसाला उत्तपम': 'Masala Uttapam',
+  'ओनियन उत्तपम': 'Onion Uttapam',
+  'पनीर उत्तपम': 'Paneer Uttapam',
+  'पाव भाजी': 'Pav Bhaji',
+  'पनीर पाव थाली': 'Paneer Pav Thali',
+  'वड़ा पाव': 'Vada Pav',
+  'वेज पिज़ा': 'Veg Pizza',
+  'अनियन पिज़ा': 'Onion Pizza',
+  'टोमैटो पिज़ा': 'Tomato Pizza',
+  'पनीर पिज़ा': 'Paneer Pizza',
+  'चीज़ पिज़ा': 'Cheese Pizza',
+  'मिक्स्ड वेज': 'Mixed Vegetable',
+  'चना मसाला': 'Chana Masala',
+  'आलू मटर टमाटर': 'Potato Peas Tomato',
+  'आलू गोभी मटर': 'Potato Cauliflower Peas',
+  'आलू पालक': 'Potato Spinach',
+  'आलू जीरा': 'Jeera Aloo',
+  'मटर पनीर': 'Matar Paneer',
+  'शाही पनीर': 'Shahi Paneer',
+  'कड़ाही पनीर': 'Kadhai Paneer',
+  'पनीर दोप्याजा': 'Paneer Do Pyaza',
+  'हांडी पनीर': 'Handi Paneer',
+  'पनीर हैदराबादी': 'Hyderabadi Paneer',
+  'पनीर बटर मशाला': 'Paneer Butter Masala',
+  'पनीर भुजिया': 'Paneer Bhurji',
+  'पालक पनीर': 'Palak Paneer',
+  'मशरुम मशाला': 'Mushroom Masala',
+  'मटर मशरुम': 'Matar Mushroom',
+  'प्लेन दाल': 'Plain Dal',
+  'दाल फ्राई': 'Dal Fry',
+  'दाल तड़का': 'Dal Tadka',
+  'दाल मखानी': 'Dal Makhani',
+  'प्लेन राइस': 'Plain Rice',
+  'जीरा राइस': 'Jeera Rice',
+  'वेज पोलाव': 'Veg Pulao',
+  'मटर पोलाव': 'Matar Pulao',
+  'काजू पोलाव': 'Cashew Pulao',
+  'तवा रोटी प्लेन': 'Plain Tawa Roti',
+  'बटर तवा रोटी': 'Butter Tawa Roti',
+  'तंदूरी रोटी प्लेन': 'Plain Tandoori Roti',
+  'तंदूरी रोटी बटर': 'Butter Tandoori Roti',
+  'प्लेन नान': 'Plain Naan',
+  'बटर नान': 'Butter Naan',
+  'सिंपल थाली': 'Simple Thali',
+  'स्पेशल थाली': 'Special Thali',
+  'डीलक्स थाली': 'Deluxe Thali',
+  'ड्राई पापड़': 'Dry Papad',
+  'फ्राई पापड़': 'Fry Papad',
+  'मशाला पापड़': 'Masala Papad',
+  'हक्का नूडल्स': 'Hakka Noodles',
+  'चाईनीज भेल': 'Chinese Bhel',
+  'ट्रिपल राइस': 'Triple Rice',
+  'सिगापुरी राइस': 'Singapore Rice',
+  'वेज सुप': 'Veg Soup',
+  'मन्चूरियन सुप': 'Manchurian Soup',
+  'मन चाहो सुप': 'Man Chaaho Soup',
+  'पनीर मन्चूरियन सुप': 'Paneer Manchurian Soup',
+};
+
 const USERS = [
   { name: 'Super Admin', username: 'superadmin', password: 'Super@1234', role: 'superadmin' },
   { name: 'Business Admin', username: 'admin', password: 'Admin@1234', role: 'admin' },
@@ -138,7 +220,9 @@ export async function seedMenu(businessId) {
     const portions = half != null || full != null;
     const update = {
       name,
+      nameEn: NAME_EN[name] || '',
       category,
+      categoryEn: CATEGORY_EN[category] || '',
       halfPrice: portions ? half : null,
       fullPrice: portions ? full : null,
       price: portions ? null : price,

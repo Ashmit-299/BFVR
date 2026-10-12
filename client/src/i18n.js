@@ -1,5 +1,114 @@
 // Full UI translation dictionary — Hindi (default) and English.
-// Dish names / categories come from the database and stay as printed on the menu card.
+// Dish names / categories: server items may carry nameEn/categoryEn; for everything
+// else (and as a fallback) the DISH_EN / CATEGORY_EN maps below translate the
+// standard menu card, so toggling the language switches menu cards too.
+
+export const CATEGORY_EN = {
+  'चाइनीज़': 'Chinese',
+  'साउथ इंडियन': 'South Indian',
+  'पिज़ा': 'Pizza',
+  'सीजनल सब्जी': 'Seasonal Vegetable',
+  'इंडियन': 'Indian',
+  'दाल': 'Dal',
+  'राइस': 'Rice',
+  'रोटी': 'Roti',
+  'थाली': 'Thali',
+  'पापड़': 'Papad',
+  'चाईनीज स्पेशल': 'Chinese Special',
+  'सुप': 'Soup',
+};
+
+export const DISH_EN = {
+  // चाइनीज़
+  'वेज चाउमीन': 'Veg Chowmein',
+  'सेजवान चाउमीन': 'Schezwan Chowmein',
+  'मन्चूरियन चाउमीन': 'Manchurian Chowmein',
+  'पनीर चाउमीन': 'Paneer Chowmein',
+  'वेज राइस': 'Veg Fried Rice',
+  'सेजवान राइस': 'Schezwan Fried Rice',
+  'मन्चूरियन राइस': 'Manchurian Fried Rice',
+  'पनीर राइस': 'Paneer Fried Rice',
+  'पनीर मन्चूरियन राइस / ग्रेवी': 'Paneer Manchurian Rice / Gravy',
+  'मन्चूरियन ग्रेवी': 'Manchurian Gravy',
+  'चिल्ली पनीर': 'Chilli Paneer',
+  'फिंगर चिल्ली': 'Chilli Finger',
+  'चिल्ली पटैटो': 'Chilli Potato',
+  'वेज बर्गर': 'Veg Burger',
+  'पनीर बर्गर': 'Paneer Burger',
+  // साउथ इंडियन
+  'पेपर डोसा': 'Paper Dosa',
+  'मसाला डोसा': 'Masala Dosa',
+  'मैसूर मसाला डोसा': 'Mysore Masala Dosa',
+  'चाइनीज़ डोसा': 'Chinese Dosa',
+  'पनीर मसाला डोसा': 'Paneer Masala Dosa',
+  'मसाला उत्तपम': 'Masala Uttapam',
+  'ओनियन उत्तपम': 'Onion Uttapam',
+  'पनीर उत्तपम': 'Paneer Uttapam',
+  'पाव भाजी': 'Pav Bhaji',
+  'पनीर पाव थाली': 'Paneer Pav Thali',
+  'वड़ा पाव': 'Vada Pav',
+  // पिज़ा
+  'वेज पिज़ा': 'Veg Pizza',
+  'अनियन पिज़ा': 'Onion Pizza',
+  'टोमैटो पिज़ा': 'Tomato Pizza',
+  'पनीर पिज़ा': 'Paneer Pizza',
+  'चीज़ पिज़ा': 'Cheese Pizza',
+  // सीजनल सब्जी
+  'मिक्स्ड वेज': 'Mixed Vegetable',
+  'चना मसाला': 'Chana Masala',
+  'आलू मटर टमाटर': 'Potato Peas Tomato',
+  'आलू गोभी मटर': 'Potato Cauliflower Peas',
+  'आलू पालक': 'Potato Spinach',
+  'आलू जीरा': 'Jeera Aloo',
+  // इंडियन
+  'मटर पनीर': 'Matar Paneer',
+  'शाही पनीर': 'Shahi Paneer',
+  'कड़ाही पनीर': 'Kadhai Paneer',
+  'पनीर दोप्याजा': 'Paneer Do Pyaza',
+  'हांडी पनीर': 'Handi Paneer',
+  'पनीर हैदराबादी': 'Hyderabadi Paneer',
+  'पनीर बटर मशाला': 'Paneer Butter Masala',
+  'पनीर भुजिया': 'Paneer Bhurji',
+  'पालक पनीर': 'Palak Paneer',
+  'मशरुम मशाला': 'Mushroom Masala',
+  'मटर मशरुम': 'Matar Mushroom',
+  // दाल
+  'प्लेन दाल': 'Plain Dal',
+  'दाल फ्राई': 'Dal Fry',
+  'दाल तड़का': 'Dal Tadka',
+  'दाल मखानी': 'Dal Makhani',
+  // राइस
+  'प्लेन राइस': 'Plain Rice',
+  'जीरा राइस': 'Jeera Rice',
+  'वेज पोलाव': 'Veg Pulao',
+  'मटर पोलाव': 'Matar Pulao',
+  'काजू पोलाव': 'Cashew Pulao',
+  // रोटी
+  'तवा रोटी प्लेन': 'Plain Tawa Roti',
+  'बटर तवा रोटी': 'Butter Tawa Roti',
+  'तंदूरी रोटी प्लेन': 'Plain Tandoori Roti',
+  'तंदूरी रोटी बटर': 'Butter Tandoori Roti',
+  'प्लेन नान': 'Plain Naan',
+  'बटर नान': 'Butter Naan',
+  // थाली
+  'सिंपल थाली': 'Simple Thali',
+  'स्पेशल थाली': 'Special Thali',
+  'डीलक्स थाली': 'Deluxe Thali',
+  // पापड़
+  'ड्राई पापड़': 'Dry Papad',
+  'फ्राई पापड़': 'Fry Papad',
+  'मशाला पापड़': 'Masala Papad',
+  // चाईनीज स्पेशल
+  'हक्का नूडल्स': 'Hakka Noodles',
+  'चाईनीज भेल': 'Chinese Bhel',
+  'ट्रिपल राइस': 'Triple Rice',
+  'सिगापुरी राइस': 'Singapore Rice',
+  // सुप
+  'वेज सुप': 'Veg Soup',
+  'मन्चूरियन सुप': 'Manchurian Soup',
+  'मन चाहो सुप': 'Man Chaaho Soup',
+  'पनीर मन्चूरियन सुप': 'Paneer Manchurian Soup',
+};
 
 export const dict = {
   hi: {
@@ -29,6 +138,7 @@ export const dict = {
     login_btn: 'लॉगिन करें',
     login_checking: 'जाँच हो रही है…',
     login_failed: 'लॉगिन विफल',
+    login_offline: 'सर्वर से कनेक्शन नहीं हो रहा — नेटवर्क जाँचें',
 
     // server setup (packaged app — APK/EXE)
     srv_label: 'सर्वर का पता (URL)',
@@ -270,7 +380,9 @@ export const dict = {
     menu_add_title: 'नया आइटम जोड़ें',
     menu_edit_title: 'संपादित करें — {name}',
     menu_name: 'आइटम का नाम *',
+    menu_name_en: 'नाम (अंग्रेज़ी) — वैकल्पिक',
     menu_cat: 'श्रेणी *',
+    menu_cat_en: 'श्रेणी (अंग्रेज़ी) — वैकल्पिक',
     menu_cat_ph: 'जैसे चाइनीज़',
     menu_price_mode: 'कीमत का तरीका',
     menu_portions: 'हाफ + फूल',
@@ -408,6 +520,7 @@ export const dict = {
     login_btn: 'Log in',
     login_checking: 'Signing in…',
     login_failed: 'Login failed',
+    login_offline: 'Cannot reach the server — check your network',
 
     // server setup (packaged app — APK/EXE)
     srv_label: 'Server address (URL)',
@@ -649,7 +762,9 @@ export const dict = {
     menu_add_title: 'Add new item',
     menu_edit_title: 'Edit — {name}',
     menu_name: 'Item name *',
+    menu_name_en: 'Name (English) — optional',
     menu_cat: 'Category *',
+    menu_cat_en: 'Category (English) — optional',
     menu_cat_ph: 'e.g. Chinese',
     menu_price_mode: 'Pricing',
     menu_portions: 'Half + Full',

@@ -45,7 +45,9 @@ router.post('/', requirePerm('menu:manage'), async (req, res, next) => {
     const item = await MenuItem.create({
       businessId: req.businessId,
       name: String(name).trim(),
+      nameEn: req.body.nameEn != null ? String(req.body.nameEn).trim() : '',
       category: String(category).trim(),
+      categoryEn: req.body.categoryEn != null ? String(req.body.categoryEn).trim() : '',
       available,
       sortOrder: Number(sortOrder) || 0,
       ...parsed.value,
@@ -60,9 +62,11 @@ router.put('/:id', requirePerm('menu:manage'), async (req, res, next) => {
   try {
     const item = await MenuItem.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!item) return res.status(404).json({ error: 'Item not found' });
-    const { name, category, available, sortOrder } = req.body || {};
+    const { name, nameEn, category, categoryEn, available, sortOrder } = req.body || {};
     if (name) item.name = String(name).trim();
+    if (nameEn !== undefined) item.nameEn = String(nameEn).trim();
     if (category) item.category = String(category).trim();
+    if (categoryEn !== undefined) item.categoryEn = String(categoryEn).trim();
     if (typeof available === 'boolean') item.available = available;
     if (sortOrder != null) item.sortOrder = Number(sortOrder) || 0;
     if (req.body.halfPrice !== undefined || req.body.fullPrice !== undefined || req.body.price !== undefined) {

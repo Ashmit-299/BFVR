@@ -80,7 +80,7 @@ function MethodMix({ methods }) {
 
 export default function Analytics() {
   const { can } = useAuth();
-  const { t } = useLang();
+  const { t, dish } = useLang();
   const toast = useToast();
   const [mode, setMode] = useState('daily');
   const [day, setDay] = useState(todayKey());
@@ -270,7 +270,7 @@ export default function Analytics() {
                 {daily.topDishes.map((d, i) => (
                   <li key={d.name}>
                     <span className="rank">{i + 1}</span>
-                    <span className="top-name">{d.name}</span>
+                    <span className="top-name">{dish(d)}</span>
                     <span className="muted">{t('sold_qty', { n: d.qty })}</span>
                     <b>{inr(d.revenue)}</b>
                   </li>
@@ -388,7 +388,7 @@ export default function Analytics() {
                 {weekly.topDishes.map((d, i) => (
                   <li key={d.name}>
                     <span className="rank">{i + 1}</span>
-                    <span className="top-name">{d.name}</span>
+                    <span className="top-name">{dish(d)}</span>
                     <span className="muted">{t('sold_qty', { n: d.qty })}</span>
                     <b>{inr(d.revenue)}</b>
                   </li>
@@ -545,7 +545,7 @@ export default function Analytics() {
                 {yearly.topDishes.map((d, i) => (
                   <li key={d.name}>
                     <span className="rank">{i + 1}</span>
-                    <span className="top-name">{d.name}</span>
+                    <span className="top-name">{dish(d)}</span>
                     <span className="muted">{t('sold_qty', { n: d.qty })}</span>
                     <b>{inr(d.revenue)}</b>
                   </li>

@@ -102,10 +102,10 @@ async function main() {
   ok('login page renders brand', (await page.content()).includes('व्यापार साथी'));
 
   await page.click('.login-lang');
-  await page.waitForFunction(() => document.body.textContent.includes('Demo accounts'));
+  await page.waitForFunction(() => document.body.textContent.includes('Username'));
   ok('language toggle → English on login', true);
   await page.click('.login-lang');
-  await page.waitForFunction(() => document.body.textContent.includes('डेमो अकाउंट'));
+  await page.waitForFunction(() => document.body.textContent.includes('यूज़रनेम'));
   ok('toggle back → Hindi', true);
 
   const mgrIn = await login(page, 'manager', 'Manager@1234');
@@ -190,6 +190,7 @@ async function main() {
   console.log('— orders list shows tables & status —');
   await clickText(page, '.nav-item', 'बिल / ऑर्डर');
   await page.waitForSelector('.table tbody tr', { timeout: 10000 });
+  await page.waitForFunction(() => document.body.textContent.includes('T2'), { timeout: 5000 }).catch(() => {});
   const tableCol = await page.evaluate(() => document.body.textContent.includes('T2'));
   ok('orders list has table column with T2', tableCol);
   const hasClosedBadge = await page.evaluate(() => document.body.textContent.includes('बंद'));

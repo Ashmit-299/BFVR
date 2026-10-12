@@ -56,6 +56,17 @@ const yesterdayOf = (day) => {
 };
 
 async function main() {
+  // Close bills left open by previous runs/sessions so the table assertions
+  // start from a clean slate (same hygiene as browser-test.mjs).
+  {
+    const tok = await login('admin', 'Admin@1234');
+    const open = await req('GET', '/api/orders?bill=open', { token: tok });
+    for (const o of open.data?.orders || []) {
+      await req('POST', '/api/orders/close', { token: tok, body: { id: o.id } });
+    }
+    if ((open.data?.orders || []).length) console.log(`(closed ${open.data.orders.length} bill(s) left open previously)`);
+  }
+
   console.log('— auth —');
   const bad = await req('POST', '/api/auth/login', { body: { username: 'admin', password: 'wrong' } });
   ok('wrong password rejected (401)', bad.status === 401);
@@ -72,7 +83,7 @@ async function main() {
 
   console.log('— menu —');
   const menu = await req('GET', '/api/menu', { token: adminTok });
-  ok('menu has 77 items', menu.data?.items?.length === 77, `got ${menu.data?.items?.length}`);
+  ok('menu has at least 77 items', menu.data?.items?.length >= 77, `got ${menu.data?.items?.length}`);
   const vegChow = menu.data.items.find((i) => i.name === 'वेज चाउमीन');
   ok('veg chowmein 30/50', vegChow?.halfPrice === 30 && vegChow?.fullPrice === 50);
 

@@ -1,11 +1,23 @@
-// API client with an offline write queue.
-// Mutations attempted while offline (or that fail on network) are queued in
+// API client with an offline write queue and a stale-while-revalidate read cache.
+//
+// Reads: every successful GET is cached in localStorage. Later calls return the
+// cached copy instantly (never blocking on the network) and refresh it in the
+// background; when the refreshed data differs, pages are told to reload. When
+// the network fails, the cached copy is served — so the whole app boots and
+// runs with no connection at all.
+//
+// Writes: mutations attempted offline (or that fail on network) are queued in
 // localStorage and replayed in order as soon as connectivity returns.
 // The server de-duplicates by clientId, so replaying is always safe.
 
 const TOKEN_KEY = 'bfvr_token';
 const QUEUE_KEY = 'bfvr_queue';
 const API_BASE_KEY = 'bfvr_api_base';
+const CACHE_PREFIX = 'bfvr_cache:';
+const CACHE_INDEX_KEY = 'bfvr_cache_index';
+const DIRTY_KEY = 'bfvr_cache_dirty';
+const CACHE_MAX_ENTRIES = 40;
+const REVALIDATE_COOLDOWN_MS = 4000;
 
 // Server address resolution:
 //  - packaged apps (APK / EXE) carry a baked-in default from VITE_API_BASE
@@ -67,6 +79,100 @@ export class ApiError extends Error {
   }
 }
 
+// ---------- read cache (stale-while-revalidate) ----------
+function readCacheIndex() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(CACHE_INDEX_KEY));
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+export function cacheRead(path) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + path);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheWrite(path, data) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + path, JSON.stringify(data));
+    const idx = readCacheIndex().filter((k) => k !== path);
+    idx.push(path);
+    while (idx.length > CACHE_MAX_ENTRIES) {
+      localStorage.removeItem(CACHE_PREFIX + idx.shift());
+    }
+    localStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(idx));
+  } catch {
+    /* quota exceeded / storage unavailable — cache is an optimization only */
+  }
+}
+
+// Drop all cached GETs so the next reads come from the server.
+// Called after every successful mutation and after the offline queue syncs.
+// Entries are KEPT but flagged dirty: online reads then wait for fresh server
+// data, while offline reads can still fall back to the last known copy.
+export function invalidateCache() {
+  try {
+    const dirty = readDirty();
+    for (const k of readCacheIndex()) dirty.add(k);
+    writeDirty(dirty);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function readDirty() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(DIRTY_KEY));
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeDirty(set) {
+  try {
+    localStorage.setItem(DIRTY_KEY, JSON.stringify([...set]));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function clearDirty(path) {
+  const dirty = readDirty();
+  if (dirty.delete(path)) writeDirty(dirty);
+}
+
+const revalidating = new Set();
+const lastRevalidated = new Map();
+
+// Refresh one cached path in the background; tell pages to reload if changed.
+function revalidate(path) {
+  if (revalidating.has(path)) return;
+  const now = Date.now();
+  if (now - (lastRevalidated.get(path) || 0) < REVALIDATE_COOLDOWN_MS) return;
+  revalidating.add(path);
+  lastRevalidated.set(path, now);
+  rawRequest('GET', path)
+    .then((data) => {
+      const prev = cacheRead(path);
+      cacheWrite(path, data);
+      clearDirty(path);
+      if (JSON.stringify(prev) !== JSON.stringify(data)) {
+        window.dispatchEvent(new CustomEvent('bfvr:refresh', { detail: { path } }));
+      }
+    })
+    .catch(() => {
+      /* offline — the cached copy stays valid */
+    })
+    .finally(() => revalidating.delete(path));
+}
+
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
 
@@ -97,16 +203,42 @@ async function rawRequest(method, path, body) {
   return data;
 }
 
+// GET — returns cached data instantly when available, refreshes in background.
+// Dirty entries (mutations happened) wait for the server while online, but the
+// cache always remains the fallback when the network fails or is offline.
 export async function get(path) {
-  return rawRequest('GET', path);
+  const entry = cacheRead(path);
+  const cached = entry ? entry.data : undefined;
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  const dirty = readDirty().has(path);
+
+  if (cached !== undefined && (offline || !dirty)) {
+    if (!offline && !dirty) revalidate(path);
+    return cached; // instant — the UI never waits on the network
+  }
+  try {
+    const data = await rawRequest('GET', path);
+    cacheWrite(path, data);
+    clearDirty(path);
+    return data;
+  } catch (err) {
+    // network died mid-flight — fall back to whatever we know
+    if (err.status === 0 && cached !== undefined) return cached;
+    throw err;
+  }
 }
+
+// One-shot request that never queues — used by login (a queued login is useless).
+export const postNow = (path, body) => rawRequest('POST', path, body);
 
 // Mutate with offline fallback: queue when offline, rethrow real API errors
 export async function mutate(method, path, body, { label = '' } = {}) {
   const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
   if (!offline) {
     try {
-      return await rawRequest(method, path, body);
+      const res = await rawRequest(method, path, body);
+      invalidateCache(); // server state changed — next reads must be fresh
+      return res;
     } catch (err) {
       if (err.status !== 0) throw err;
     }
@@ -171,6 +303,7 @@ export async function flushQueue() {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
     notifyQueue();
     const result = { synced, failed };
+    if (synced > 0) invalidateCache(); // replayed writes changed server state
     window.dispatchEvent(new CustomEvent('bfvr:sync', { detail: result }));
     return result;
   } finally {

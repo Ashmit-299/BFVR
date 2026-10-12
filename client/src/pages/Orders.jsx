@@ -17,7 +17,7 @@ const RANGES = [
 
 export default function Orders() {
   const { can } = useAuth();
-  const { t } = useLang();
+  const { t, dish } = useLang();
   const toast = useToast();
   const [orders, setOrders] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -78,8 +78,25 @@ export default function Orders() {
         { clientId: crypto.randomUUID(), method: payMethod, amount: Number(payAmount) },
         { label: `${t('ord_pay')} #${payFor.number}` }
       );
-      if (res.queued) toast.push(t('pay_offline'), 'success');
-      else toast.push(t('pay_recorded'), 'success');
+      if (res.queued) {
+        toast.push(t('pay_offline'), 'success');
+      } else {
+        toast.push(t('pay_recorded'), 'success');
+        // Fully paid → the bill is finished: close it so its table is freed
+        const paid = res.order;
+        if (paid && paid.status === 'open' && paid.due <= 0) {
+          try {
+            const cres = await post(
+              '/api/orders/close',
+              { id: paid.id, orderClientId: paid.clientId || undefined },
+              { label: `${t('ord_close')} #${payFor.number}` }
+            );
+            if (!cres.queued) toast.push(t('ord_closed'), 'success');
+          } catch (err) {
+            toast.push(err.message, 'error'); // stays open — can be closed manually
+          }
+        }
+      }
       setPayFor(null);
       load();
     } catch (err) {
@@ -105,7 +122,7 @@ export default function Orders() {
 
   const openEdit = (o) => {
     setEditing(o);
-    setEditItems(o.items.map((it) => ({ itemId: it.item, name: it.name, portion: it.portion, price: it.price, qty: it.qty })));
+    setEditItems(o.items.map((it) => ({ itemId: it.item, name: it.name, nameEn: it.nameEn || '', portion: it.portion, price: it.price, qty: it.qty })));
     setEditDiscount(String(o.discount || ''));
     setEditName(o.customerName || '');
     setEditPhone(o.customerPhone || '');
@@ -121,7 +138,7 @@ export default function Orders() {
     if (existing) {
       setEditItems((rows) => rows.map((r) => (r === existing ? { ...r, qty: r.qty + 1 } : r)));
     } else {
-      setEditItems((rows) => [...rows, { itemId, name: menu.name, portion, price, qty: 1 }]);
+      setEditItems((rows) => [...rows, { itemId, name: menu.name, nameEn: menu.nameEn || '', portion, price, qty: 1 }]);
     }
   };
 
@@ -256,7 +273,7 @@ export default function Orders() {
                   <td className="items-cell">
                     {o.items
                       .slice(0, 3)
-                      .map((it) => `${it.name}${it.portion !== 'single' ? ` (${t(`portion_${it.portion}`)})` : ''}×${it.qty}`)
+                      .map((it) => `${dish(it)}${it.portion !== 'single' ? ` (${t(`portion_${it.portion}`)})` : ''}×${it.qty}`)
                       .join(', ')}
                     {o.items.length > 3 && ` +${o.items.length - 3}`}
                   </td>
@@ -358,13 +375,12 @@ export default function Orders() {
           </div>
 
           <label className="field-label">{t('col_items')}</label>
-          <div className="edit-rows">
-            {editItems.map((it, i) => (
-              <div className="edit-row" key={`${it.itemId}:${it.portion}:${i}`}>
-                <span>
-                  {it.name}
-                  {it.portion !== 'single' && <em className="portion-tag">{t(`portion_${it.portion}`)}</em>}
-                </span>
+          <div className="edit-rows">              {editItems.map((it, i) => (
+                <div className="edit-row" key={`${it.itemId}:${it.portion}:${i}`}>
+                  <span>
+                    {dish(it)}
+                    {it.portion !== 'single' && <em className="portion-tag">{t(`portion_${it.portion}`)}</em>}
+                  </span>
                 <div className="qty-stepper">
                   <button onClick={() => setEditItems((rows) => rows.map((r, j) => (j === i ? { ...r, qty: Math.max(1, r.qty - 1) } : r)))}>−</button>
                   <span>{it.qty}</span>
@@ -382,17 +398,17 @@ export default function Orders() {
             <option value="">{t('edit_add_item')}</option>
             {menuItems.map((m) =>
               m.portions ? (
-                <optgroup key={m.id} label={m.name}>
+                <optgroup key={m.id} label={dish(m)}>
                   <option value={`${m.id}|half`}>
-                    {m.name} — {t('portion_half')} {inr(m.halfPrice)}
+                    {dish(m)} — {t('portion_half')} {inr(m.halfPrice)}
                   </option>
                   <option value={`${m.id}|full`}>
-                    {m.name} — {t('portion_full')} {inr(m.fullPrice)}
+                    {dish(m)} — {t('portion_full')} {inr(m.fullPrice)}
                   </option>
                 </optgroup>
               ) : (
                 <option key={m.id} value={`${m.id}|single`}>
-                  {m.name} — {inr(m.price)}
+                  {dish(m)} — {inr(m.price)}
                 </option>
               )
             )}

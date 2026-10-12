@@ -7,11 +7,11 @@ import Modal from '../components/Modal.jsx';
 import { inr } from '../lib/format.js';
 import { IconPencil, IconTrash } from '../components/Icons.jsx';
 
-const EMPTY_FORM = { name: '', category: '', pricing: 'portions', halfPrice: '', fullPrice: '', price: '', sortOrder: '' };
+const EMPTY_FORM = { name: '', nameEn: '', category: '', categoryEn: '', pricing: 'portions', halfPrice: '', fullPrice: '', price: '', sortOrder: '' };
 
 export default function Menu() {
   const { can } = useAuth();
-  const { t } = useLang();
+  const { t, dish, cat: catLabel } = useLang();
   const toast = useToast();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -31,6 +31,9 @@ export default function Menu() {
 
   useEffect(() => {
     load();
+    const onRefresh = () => load();
+    window.addEventListener('bfvr:refresh', onRefresh);
+    return () => window.removeEventListener('bfvr:refresh', onRefresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -59,7 +62,9 @@ export default function Menu() {
   const openEdit = (item) => {
     setForm({
       name: item.name,
+      nameEn: item.nameEn || '',
       category: item.category,
+      categoryEn: item.categoryEn || '',
       pricing: item.portions ? 'portions' : 'single',
       halfPrice: item.halfPrice ?? '',
       fullPrice: item.fullPrice ?? item.price ?? '',
@@ -76,7 +81,9 @@ export default function Menu() {
     }
     const body = {
       name: form.name.trim(),
+      nameEn: form.nameEn.trim(),
       category: form.category.trim(),
+      categoryEn: form.categoryEn.trim(),
       sortOrder: form.sortOrder === '' ? 0 : Number(form.sortOrder),
     };
     if (form.pricing === 'portions') {
@@ -85,19 +92,24 @@ export default function Menu() {
     } else {
       body.price = form.price;
     }
+    const isNew = modal === 'new';
     setBusy(true);
+    setModal(null); // close instantly — the list updates without waiting
     try {
-      if (modal === 'new') {
-        await post('/api/menu', body, { label: `${t('menu_add')}: ${body.name}` });
-        toast.push(t('menu_added'), 'success');
-      } else {
-        await put(`/api/menu/${modal.id}`, body, { label: `${body.name}` });
-        toast.push(t('menu_updated'), 'success');
+      const res = isNew
+        ? await post('/api/menu', body, { label: `${t('menu_add')}: ${body.name}` })
+        : await put(`/api/menu/${modal.id}`, body, { label: `${body.name}` });
+      if (!res.queued && res.item) {
+        // online: apply the saved item immediately, reconcile in the background
+        setItems((rows) =>
+          isNew ? [...rows.filter((r) => r.id !== res.item.id), res.item] : rows.map((r) => (r.id === res.item.id ? res.item : r))
+        );
       }
-      setModal(null);
+      toast.push(isNew ? t('menu_added') : t('menu_updated'), 'success');
       load();
     } catch (err) {
       toast.push(err.message, 'error');
+      load();
     } finally {
       setBusy(false);
     }
@@ -114,7 +126,7 @@ export default function Menu() {
   };
 
   const remove = async (item) => {
-    if (!window.confirm(t('menu_delete_confirm', { name: item.name }))) return;
+    if (!window.confirm(t('menu_delete_confirm', { name: dish(item) }))) return;
     try {
       await del(`/api/menu/${item.id}`, { label: item.name });
       toast.push(t('menu_deleted'), 'success');
@@ -140,7 +152,7 @@ export default function Menu() {
       <div className="menu-groups">
         {groups.map((g) => (
           <div className="card menu-group" key={g.category}>
-            <div className="menu-cat-head">{g.category}</div>
+            <div className="menu-cat-head">{catLabel(g.category)}</div>
             <div className="table-scroll">
               <table className="table">
                 <thead>
@@ -155,7 +167,7 @@ export default function Menu() {
                 <tbody>
                   {g.rows.map((it) => (
                     <tr key={it.id} className={it.available === false ? 'row-off' : ''}>
-                      <td>{it.name}</td>
+                      <td>{dish(it)}</td>
                       <td className="right">{it.portions ? inr(it.halfPrice) : '—'}</td>
                       <td className="right">
                         <b>{inr(it.fullPrice)}</b>
@@ -189,7 +201,7 @@ export default function Menu() {
 
       {modal && (
         <Modal
-          title={modal === 'new' ? t('menu_add_title') : t('menu_edit_title', { name: modal.name })}
+          title={modal === 'new' ? t('menu_add_title') : t('menu_edit_title', { name: dish(modal) })}
           onClose={() => setModal(null)}
           footer={
             <>
@@ -205,6 +217,9 @@ export default function Menu() {
           <label className="field-label">{t('menu_name')}</label>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
 
+          <label className="field-label">{t('menu_name_en')}</label>
+          <input value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} />
+
           <label className="field-label">{t('menu_cat')}</label>
           <input
             list="cat-list"
@@ -217,6 +232,9 @@ export default function Menu() {
               <option key={c} value={c} />
             ))}
           </datalist>
+
+          <label className="field-label">{t('menu_cat_en')}</label>
+          <input value={form.categoryEn} onChange={(e) => setForm({ ...form, categoryEn: e.target.value })} />
 
           <label className="field-label">{t('menu_price_mode')}</label>
           <div className="method-chips">

@@ -1,7 +1,26 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { get, post, getToken, setToken } from '../lib/api.js';
+import { get, postNow, getToken, setToken } from '../lib/api.js';
 
 const AuthContext = createContext(null);
+const USER_KEY = 'bfvr_user';
+
+const readCachedUser = () => {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedUser = (u) => {
+  try {
+    if (u) localStorage.setItem(USER_KEY, JSON.stringify(u));
+    else localStorage.removeItem(USER_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -13,15 +32,29 @@ export function AuthProvider({ children }) {
       if (getToken()) {
         try {
           const data = await get('/api/auth/me');
-          if (alive) setUser(data.user);
-        } catch {
-          setToken(null);
+          if (alive) {
+            setUser(data.user);
+            writeCachedUser(data.user);
+          }
+        } catch (err) {
+          // 401 = the session really ended. Any other failure (offline, server
+          // down) must NOT log the user out — boot from the cached profile and
+          // let the background revalidate confirm it later.
+          if (err.status === 401) {
+            setToken(null);
+            writeCachedUser(null);
+            if (alive) setUser(null);
+          } else {
+            const cached = readCachedUser();
+            if (alive && cached) setUser(cached);
+          }
         }
       }
       if (alive) setLoading(false);
     })();
     const onUnauthorized = () => {
       setToken(null);
+      writeCachedUser(null);
       setUser(null);
     };
     window.addEventListener('bfvr:unauthorized', onUnauthorized);
@@ -32,14 +65,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (username, password) => {
-    const data = await post('/api/auth/login', { username, password });
+    // never queued — a login must reach the server or fail loudly
+    const data = await postNow('/api/auth/login', { username, password });
     setToken(data.token);
     setUser(data.user);
+    writeCachedUser(data.user);
     return data.user;
   }, []);
 
   const logout = useCallback(() => {
     setToken(null);
+    writeCachedUser(null);
     setUser(null);
   }, []);
 

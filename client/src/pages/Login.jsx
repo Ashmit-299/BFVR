@@ -27,7 +27,7 @@ export default function Login() {
       await login(username, password);
       navigate('/pos', { replace: true });
     } catch (err) {
-      setError(err.message || t('login_failed'));
+      setError(err.status === 0 ? t('login_offline') : err.message || t('login_failed'));
     } finally {
       setBusy(false);
     }

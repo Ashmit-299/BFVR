@@ -31,9 +31,27 @@ async function buildItems(selections, businessId) {
       price = menu.price;
       if (price == null) return { error: `${menu.name} has no price set` };
     }
-    items.push({ item: menu._id, name: menu.name, category: menu.category, portion, price, qty });
+    items.push({ item: menu._id, name: menu.name, nameEn: menu.nameEn || '', category: menu.category, portion, price, qty });
   }
   return { value: items };
+}
+
+// Serializes upserts per table (or per bill clientId) inside this process so
+// two rapid saves can never create two open bills on the same table — which
+// would leave the table "captured" after one of them is paid & closed.
+const locks = new Map();
+function withLock(key, fn) {
+  const prev = locks.get(key) || Promise.resolve();
+  const run = prev.then(fn);
+  const tail = run.then(
+    () => {},
+    () => {}
+  );
+  locks.set(key, tail);
+  tail.then(() => {
+    if (locks.get(key) === tail) locks.delete(key);
+  });
+  return run;
 }
 
 // POST create bill (offline-safe via clientId)
@@ -129,9 +147,21 @@ router.post('/upsert', requirePerm('orders:create'), async (req, res, next) => {
     if (tableNo != null && (!Number.isInteger(tableNo) || tableNo < 1 || tableNo > 10)) {
       return res.status(400).json({ error: 'Invalid table number' });
     }
-
+    const lockKey =
+      tableNo != null
+        ? `t:${req.businessId}:${tableNo}`
+        : `c:${req.businessId}:${clientId || Math.random()}`;
+    await withLock(lockKey, async () => {
     let order = null;
     if (clientId) order = await Order.findOne({ clientId, businessId: req.businessId });
+    // A settled bill must never be mutated. If this clientId points at a
+    // closed bill, free the id so this save becomes a fresh bill (or attaches
+    // to the table's current open one) — offline replays still resolve to it.
+    if (order && order.status === 'closed') {
+      order.clientId = null;
+      await order.save();
+      order = null;
+    }
     if (!order && tableNo != null) order = await Order.findOne({ businessId: req.businessId, table: tableNo, status: 'open' });
 
     const built = await buildItems(selections, req.businessId);
@@ -174,6 +204,7 @@ router.post('/upsert', requirePerm('orders:create'), async (req, res, next) => {
       createdBy: userBrief(req.user),
     });
     res.status(201).json({ order: created.toClient() });
+    });
   } catch (err) {
     next(err);
   }
@@ -193,6 +224,21 @@ router.post('/close', requirePerm('orders:create'), async (req, res, next) => {
     order.closedBy = userBrief(req.user);
     order.updatedBy = userBrief(req.user);
     await order.save();
+    // Free the table completely: also settle any stray open bill left on the
+    // same table (e.g. a duplicate from a race) so payment really empties it.
+    if (order.table != null) {
+      await Order.updateMany(
+        { businessId: req.businessId, table: order.table, status: 'open', _id: { $ne: order._id } },
+        {
+          $set: {
+            status: 'closed',
+            closedAt: order.closedAt,
+            closedBy: order.closedBy,
+            updatedBy: order.updatedBy,
+          },
+        }
+      );
+    }
     res.json({ order: order.toClient() });
   } catch (err) {
     next(err);

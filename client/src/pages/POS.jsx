@@ -25,7 +25,7 @@ const emptyBill = () => ({ cart: [], customer: '', phone: '', discount: '', meta
 
 export default function POS() {
   const toast = useToast();
-  const { t } = useLang();
+  const { t, dish, cat: catLabel } = useLang();
 
   const [items, setItems] = useState(() => {
     try {
@@ -57,6 +57,8 @@ export default function POS() {
   const switchingRef = useRef(false);
   const tablesSeq = useRef(0);
   const menuSeq = useRef(0);
+  const activeKeyRef = useRef('0'); // read inside async saves (closure-safe)
+  const saveChainRef = useRef(Promise.resolve()); // serializes saves — no duplicate bills
 
   // ---------- data loading ----------
   const loadMenu = async () => {
@@ -127,6 +129,7 @@ export default function POS() {
           key: `${it.item}:${it.portion}`,
           itemId: it.item,
           name: it.name,
+          nameEn: it.nameEn || '',
           portion: it.portion,
           price: it.price,
           qty: it.qty,
@@ -150,13 +153,15 @@ export default function POS() {
     setMeta({});
   };
 
-  const selectTable = async (key) => {
-    if (key === activeKey) return;
-    // auto-save the bill we are leaving so tables stay accurate
+  const selectTable = (key) => {
+    if (key === activeKeyRef.current) return;
+    // auto-save the bill we are leaving — in the background, so switching
+    // tables never waits on the network
     if (dirtyRef.current && cart.length > 0) {
-      await doSave({ silent: true });
+      doSave({ silent: true });
     }
     switchingRef.current = true;
+    activeKeyRef.current = key;
     hydrate(key);
     setActiveKey(key);
     dirtyRef.current = false;
@@ -168,10 +173,15 @@ export default function POS() {
   // ---------- cart ops ----------
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return items.filter(
-      (i) => (cat === 'सभी' || i.category === cat) && (!needle || i.name.toLowerCase().includes(needle))
-    );
-  }, [items, cat, q]);
+    return items.filter((i) => {
+      if (cat !== 'सभी' && i.category !== cat) return false;
+      if (!needle) return true;
+      // match the stored name and the name in the current language
+      return (
+        i.name.toLowerCase().includes(needle) || dish(i).toLowerCase().includes(needle)
+      );
+    });
+  }, [items, cat, q, dish]);
 
   const subtotal = cart.reduce((s, r) => s + r.price * r.qty, 0);
   const discValue = Math.max(0, Math.min(Number(discount) || 0, subtotal));
@@ -188,7 +198,7 @@ export default function POS() {
         next[ix] = { ...next[ix], qty: next[ix].qty + 1 };
         return next;
       }
-      return [...c, { key, itemId: item.id, name: item.name, portion, price, qty: 1 }];
+      return [...c, { key, itemId: item.id, name: item.name, nameEn: item.nameEn || '', portion, price, qty: 1 }];
     });
     markDirty();
   };
@@ -217,7 +227,19 @@ export default function POS() {
   };
 
   // ---------- save / close ----------
-  const doSave = async ({ silent = false } = {}) => {
+  // All saves run through a chain so two rapid saves can never race the server
+  // (racing upserts used to create two open bills and leave tables captured).
+  const doSave = ({ silent = false } = {}) => {
+    const key = activeKeyRef.current; // capture NOW — the table may switch before we run
+    const run = saveChainRef.current.then(() => doSaveInner({ silent, key }));
+    saveChainRef.current = run.then(
+      () => {},
+      () => {}
+    );
+    return run;
+  };
+
+  const doSaveInner = async ({ silent = false, key }) => {
     if (cart.length === 0) {
       if (!silent) toast.push(t('pos_no_items'), 'error');
       return null;
@@ -228,7 +250,7 @@ export default function POS() {
         '/api/orders/upsert',
         {
           clientId,
-          table: activeKey === '0' ? null : Number(activeKey),
+          table: key === '0' ? null : Number(key),
           customerName: customer,
           customerPhone: phone,
           items: cart.map(({ itemId, portion, qty }) => ({ itemId, portion, qty })),
@@ -236,9 +258,10 @@ export default function POS() {
         },
         { label: t('pos_save') }
       );
+      const stillActive = activeKeyRef.current === key;
       if (res.queued) {
         if (!silent) toast.push(t('pos_offline_saved'), 'success');
-        setMeta((m) => ({ ...m, orderClientId: clientId }));
+        if (stillActive) setMeta((m) => ({ ...m, orderClientId: clientId }));
         return { queued: true, clientId };
       }
       const order = res.order;
@@ -249,10 +272,10 @@ export default function POS() {
         orderNumber: order.number,
         paid: order.paid,
       };
-      setMeta(savedMeta);
-      storeRef.current[activeKey] = { cart, customer, phone, discount, meta: savedMeta };
+      if (stillActive) setMeta(savedMeta);
+      storeRef.current[key] = { cart, customer, phone, discount, meta: savedMeta };
       localStorage.setItem(CART_STORE, JSON.stringify(storeRef.current));
-      dirtyRef.current = false;
+      if (stillActive) dirtyRef.current = false;
       if (!silent) toast.push(t('pos_saved'), 'success');
       loadTables();
       return { order, clientId: finalClientId };
@@ -374,7 +397,7 @@ export default function POS() {
                 className={`cat-chip ${cat === c ? 'active' : ''}`}
                 onClick={() => setCat(c)}
               >
-                {c === 'सभी' ? t('common_all') : c}
+                {c === 'सभी' ? t('common_all') : catLabel(c)}
               </button>
             ))}
           </div>
@@ -383,7 +406,7 @@ export default function POS() {
         <div className="dish-grid">
           {visible.map((item) => (
             <div key={item.id} className={`dish-card ${item.available === false ? 'off' : ''}`}>
-              <div className="dish-name">{item.name}</div>
+              <div className="dish-name">{dish(item)}</div>
               <div className="dish-prices">
                 {item.portions ? (
                   <>
@@ -466,7 +489,7 @@ export default function POS() {
             <div className="cart-row" key={r.key}>
               <div className="cart-row-main">
                 <span className="cart-item-name">
-                  {r.name}
+                  {dish(r)}
                   {r.portion !== 'single' && <em className="portion-tag">{t(`portion_${r.portion}`)}</em>}
                 </span>
                 <button className="cart-del" onClick={() => removeRow(r.key)} title={t('common_delete')}>

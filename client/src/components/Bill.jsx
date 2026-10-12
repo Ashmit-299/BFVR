@@ -8,7 +8,7 @@ let settingsCache = null;
 
 // Printable bill — follows the current language, prints for customers.
 export default function Bill({ order, onClose }) {
-  const { t } = useLang();
+  const { t, dish } = useLang();
   const [settings, setSettings] = useState(settingsCache);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function Bill({ order, onClose }) {
               {order.items.map((it, i) => (
                 <tr key={i}>
                   <td>
-                    {it.name}
+                    {dish(it)}
                     {it.portion !== 'single' && <span className="bill-portion"> ({t(`portion_${it.portion}`)})</span>}
                   </td>
                   <td>{it.qty}</td>
