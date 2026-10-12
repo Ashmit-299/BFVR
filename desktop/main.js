@@ -3,10 +3,10 @@
 // The UI is served from a tiny localhost static server so that:
 //  - absolute asset paths (/assets/...) resolve correctly,
 //  - React Router (BrowserRouter) deep links like /pos keep working,
-//  - localStorage (login token, server address, offline queue) persists.
+//  - localStorage (login token, offline queue) persists.
 //
-// The server address itself is NOT baked in — the login screen asks for it
-// on first run and remembers it, exactly like the Android APK.
+// The cloud server URL is baked into the shell build (VITE_API_BASE in
+// client/.env.shell) — the login screen only asks for username/password.
 
 const { app, BrowserWindow, shell } = require('electron');
 const http = require('node:http');

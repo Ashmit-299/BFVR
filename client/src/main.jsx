@@ -5,8 +5,13 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { LangProvider } from './context/LangContext.jsx';
+import { hydrate } from './lib/store.js';
 import './styles.css';
 
+// Restore the session/offline cache from durable storage BEFORE the first
+// render — if Android reclaimed localStorage, the app must still open straight
+// into the POS instead of the login screen (and keep working offline).
+hydrate().then(() =>
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -19,4 +24,5 @@ createRoot(document.getElementById('root')).render(
       </LangProvider>
     </BrowserRouter>
   </React.StrictMode>
+)
 );

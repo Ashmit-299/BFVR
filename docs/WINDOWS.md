@@ -24,17 +24,11 @@ Both are x64 (64-bit) Windows apps.
 1. Copy `Vyapar-Saathi-Portable-1.0.0.exe` anywhere (a USB stick works too).
 2. Double-click to run — nothing is installed on the PC.
 
-## First run — point the app at your server
+## First run — just log in
 
-The EXE does not know your server address in advance. On first launch (and on the login
-screen afterwards):
-
-1. Enter the server address once — e.g. `https://vyapar-saathi.onrender.com` (cloud) or
-   `http://192.168.1.5:5050` (local PC on the same Wi-Fi).
-2. Tap **Test** — you should see the green "connected" confirmation.
-3. Log in with your username and password.
-
-The address is remembered on that PC, so you only do this once. See
+The server address (`https://vyapar-saathi-4ucf.onrender.com`) is **baked into the EXE**,
+so there is no address to enter — open the app and log in with your username and password.
+The login is remembered on that PC, so the next launch opens straight into the POS. See
 [SERVER.md](SERVER.md) for how to set up the server itself.
 
 ## Offline behaviour
@@ -46,7 +40,7 @@ de-duplicates by a unique ID per entry).
 ## Updates
 
 Download the new EXE and run it again (Setup replaces the old version; Portable just
-overwrites the old file). Your login and server address are kept.
+overwrites the old file). Your login is kept.
 
 ## Rebuilding the EXE from source
 

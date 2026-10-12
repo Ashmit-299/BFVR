@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { get, postNow, getToken, setToken } from '../lib/api.js';
+import { getItem, setItem, removeItem } from '../lib/store.js';
 
 const AuthContext = createContext(null);
 const USER_KEY = 'bfvr_user';
 
 const readCachedUser = () => {
   try {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -15,8 +16,8 @@ const readCachedUser = () => {
 
 const writeCachedUser = (u) => {
   try {
-    if (u) localStorage.setItem(USER_KEY, JSON.stringify(u));
-    else localStorage.removeItem(USER_KEY);
+    if (u) setItem(USER_KEY, JSON.stringify(u));
+    else removeItem(USER_KEY);
   } catch {
     /* storage unavailable */
   }
@@ -29,28 +30,39 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      if (getToken()) {
-        try {
-          const data = await get('/api/auth/me');
-          if (alive) {
-            setUser(data.user);
-            writeCachedUser(data.user);
-          }
-        } catch (err) {
-          // 401 = the session really ended. Any other failure (offline, server
-          // down) must NOT log the user out — boot from the cached profile and
-          // let the background revalidate confirm it later.
-          if (err.status === 401) {
-            setToken(null);
-            writeCachedUser(null);
-            if (alive) setUser(null);
-          } else {
-            const cached = readCachedUser();
-            if (alive && cached) setUser(cached);
-          }
+      const token = getToken();
+      const cached = token ? readCachedUser() : null;
+      if (!token) {
+        if (alive) setLoading(false);
+        return;
+      }
+      // Open instantly from the stored profile — never block the first screen
+      // on the network. This is what keeps the app logged in across launches
+      // and lets it start with no internet at all; the /me call below then
+      // only confirms (or ends) the session in the background.
+      if (cached) {
+        if (alive) {
+          setUser(cached);
+          setLoading(false);
         }
       }
-      if (alive) setLoading(false);
+      try {
+        const data = await get('/api/auth/me');
+        if (alive) {
+          setUser(data.user);
+          writeCachedUser(data.user);
+          setLoading(false);
+        }
+      } catch (err) {
+        // 401 = the session really ended. Any other failure (offline, server
+        // down) must NOT log the user out — the stored profile stays in place.
+        if (err.status === 401) {
+          setToken(null);
+          writeCachedUser(null);
+          if (alive) setUser(null);
+        }
+        if (alive) setLoading(false);
+      }
     })();
     const onUnauthorized = () => {
       setToken(null);

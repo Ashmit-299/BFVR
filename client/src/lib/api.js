@@ -10,9 +10,10 @@
 // localStorage and replayed in order as soon as connectivity returns.
 // The server de-duplicates by clientId, so replaying is always safe.
 
+import { getItem, setItem, removeItem } from './store.js';
+
 const TOKEN_KEY = 'bfvr_token';
 const QUEUE_KEY = 'bfvr_queue';
-const API_BASE_KEY = 'bfvr_api_base';
 const CACHE_PREFIX = 'bfvr_cache:';
 const CACHE_INDEX_KEY = 'bfvr_cache_index';
 const DIRTY_KEY = 'bfvr_cache_dirty';
@@ -20,57 +21,19 @@ const CACHE_MAX_ENTRIES = 40;
 const REVALIDATE_COOLDOWN_MS = 4000;
 
 // Server address resolution:
-//  - packaged apps (APK / EXE) carry a baked-in default from VITE_API_BASE
-//  - the login screen can override it at runtime (saved in localStorage)
+//  - packaged apps (APK / EXE) carry the cloud URL baked in at build time
+//    (VITE_API_BASE in .env.shell) — the same URL on every device, and there
+//    is no "enter server address" field on the login screen any more
 //  - normal web deployment leaves it empty → same-origin /api requests
 export function getApiBase() {
-  let stored = null;
-  try {
-    stored = localStorage.getItem(API_BASE_KEY);
-  } catch {
-    /* storage unavailable */
-  }
-  const base = stored ?? import.meta.env.VITE_API_BASE ?? '';
+  const base = import.meta.env.VITE_API_BASE ?? '';
   return String(base).replace(/\/+$/, '');
-}
-
-export function setApiBase(url) {
-  try {
-    if (url) localStorage.setItem(API_BASE_KEY, String(url).replace(/\/+$/, ''));
-    else localStorage.removeItem(API_BASE_KEY);
-  } catch {
-    /* storage unavailable */
-  }
 }
 
 const apiUrl = (path) => {
   const base = getApiBase();
   return base ? `${base}${path}` : path;
 };
-
-// Packaged builds (APK / EXE) must ask for the server address at runtime;
-// normal web deployments are same-origin and never show the setup field.
-export function needsServerSetup() {
-  if (typeof window === 'undefined') return false;
-  if (import.meta.env.VITE_SHELL === '1') return true;
-  return !/^https?:$/.test(window.location.protocol);
-}
-
-// Reachability probe (with timeout) — used by the first-run server setup screen.
-export async function checkServer(base) {
-  const url = `${String(base || '').replace(/\/+$/, '')}/api/health`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    const data = await res.json().catch(() => null);
-    return !!(res.ok && data && data.ok);
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
@@ -82,7 +45,7 @@ export class ApiError extends Error {
 // ---------- read cache (stale-while-revalidate) ----------
 function readCacheIndex() {
   try {
-    const arr = JSON.parse(localStorage.getItem(CACHE_INDEX_KEY));
+    const arr = JSON.parse(getItem(CACHE_INDEX_KEY));
     return Array.isArray(arr) ? arr : [];
   } catch {
     return [];
@@ -91,7 +54,7 @@ function readCacheIndex() {
 
 export function cacheRead(path) {
   try {
-    const raw = localStorage.getItem(CACHE_PREFIX + path);
+    const raw = getItem(CACHE_PREFIX + path);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -100,13 +63,13 @@ export function cacheRead(path) {
 
 function cacheWrite(path, data) {
   try {
-    localStorage.setItem(CACHE_PREFIX + path, JSON.stringify(data));
+    setItem(CACHE_PREFIX + path, JSON.stringify(data));
     const idx = readCacheIndex().filter((k) => k !== path);
     idx.push(path);
     while (idx.length > CACHE_MAX_ENTRIES) {
-      localStorage.removeItem(CACHE_PREFIX + idx.shift());
+      removeItem(CACHE_PREFIX + idx.shift());
     }
-    localStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(idx));
+    setItem(CACHE_INDEX_KEY, JSON.stringify(idx));
   } catch {
     /* quota exceeded / storage unavailable — cache is an optimization only */
   }
@@ -128,7 +91,7 @@ export function invalidateCache() {
 
 function readDirty() {
   try {
-    const arr = JSON.parse(localStorage.getItem(DIRTY_KEY));
+    const arr = JSON.parse(getItem(DIRTY_KEY));
     return new Set(Array.isArray(arr) ? arr : []);
   } catch {
     return new Set();
@@ -137,7 +100,7 @@ function readDirty() {
 
 function writeDirty(set) {
   try {
-    localStorage.setItem(DIRTY_KEY, JSON.stringify([...set]));
+    setItem(DIRTY_KEY, JSON.stringify([...set]));
   } catch {
     /* storage unavailable */
   }
@@ -173,8 +136,8 @@ function revalidate(path) {
     .finally(() => revalidating.delete(path));
 }
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const setToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
+export const getToken = () => getItem(TOKEN_KEY);
+export const setToken = (t) => (t ? setItem(TOKEN_KEY, t) : removeItem(TOKEN_KEY));
 
 async function rawRequest(method, path, body) {
   let res;
@@ -253,7 +216,7 @@ export async function mutate(method, path, body, { label = '' } = {}) {
   };
   const q = getQueue();
   q.push(entry);
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+  setItem(QUEUE_KEY, JSON.stringify(q));
   notifyQueue();
   return { queued: true, qid: entry.qid };
 }
@@ -264,7 +227,7 @@ export const del = (path, opts) => mutate('DELETE', path, undefined, opts);
 
 export function getQueue() {
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY)) || [];
+    return JSON.parse(getItem(QUEUE_KEY)) || [];
   } catch {
     return [];
   }
@@ -300,7 +263,7 @@ export async function flushQueue() {
         failed.push({ label: entry.label || entry.path, error: err.message });
       }
     }
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
+    setItem(QUEUE_KEY, JSON.stringify(remaining));
     notifyQueue();
     const result = { synced, failed };
     if (synced > 0) invalidateCache(); // replayed writes changed server state

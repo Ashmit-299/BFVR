@@ -4,8 +4,9 @@ Vyapar Saathi runs as a Node.js API + web server backed by MongoDB. There are tw
 run it: **on your own PC** (works on the local network / internet) or **in the cloud** (free
 tier, always available). Both are described below.
 
-The mobile APK and Windows EXE apps need a server address — either a cloud URL (recommended)
-or your PC's local IP (same Wi-Fi network only).
+The mobile APK and Windows EXE apps have the cloud server URL baked in at build time
+(`VITE_API_BASE` in `client/.env.shell`) — there is no address to enter on their login
+screens. Change it there and rebuild the apps if your server URL ever changes.
 
 ---
 
@@ -90,8 +91,9 @@ The project ships with **Render** (free tier) configuration out of the box.
    - `CLIENT_ORIGIN` — leave blank or `*`
 4. Deploy. On first boot the server **auto-seeds** the demo users and menu, so no manual
    `npm run seed` step is needed.
-5. When done, Render shows a URL like `https://vyapar-saathi.onrender.com` — this is the
-   server address to enter in the APK/EXE apps.
+5. When done, Render shows a URL like `https://vyapar-saathi.onrender.com` — packaged
+   APK/EXE builds read their address from `VITE_API_BASE` in `client/.env.shell`, so
+   rebuild them if your URL differs from the baked-in one.
 
 > **Free-tier note:** Render's free web service **sleeps after ~15 minutes of inactivity**.
 > The first request after idle takes ~30 seconds to wake up. If you need it always-awake,
@@ -109,9 +111,8 @@ with the same three environment variables.
 ## First-time setup after the server is running
 
 1. Open the app (browser, APK, or EXE).
-2. On the **login screen** of the APK/EXE, enter the server address once
-   (e.g. `https://vyapar-saathi.onrender.com` or `http://192.168.1.5:5050`) and tap **Test**.
-   The address is remembered on that device.
+2. The APK/EXE builds have the server address
+   (`https://vyapar-saathi-4ucf.onrender.com`) baked in — no address to enter.
 3. Log in with a default account and change the passwords immediately
    (सेटिंग्स → मेरा पासवर्ड बदलें):
 

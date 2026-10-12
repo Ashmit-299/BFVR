@@ -1,17 +1,18 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { dict, DISH_EN, CATEGORY_EN } from '../i18n.js';
+import { getItem, setItem } from '../lib/store.js';
 
 const LangContext = createContext(null);
 
 export function LangProvider({ children }) {
-  const [lang, setLangState] = useState(() => localStorage.getItem('bfvr_lang') || 'hi');
+  const [lang, setLangState] = useState(() => getItem('bfvr_lang') || 'hi');
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
   const setLang = useCallback((l) => {
-    localStorage.setItem('bfvr_lang', l);
+    setItem('bfvr_lang', l);
     setLangState(l);
   }, []);
 

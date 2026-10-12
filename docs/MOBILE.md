@@ -20,18 +20,13 @@ during development, but the release APK is the one to distribute.
    ("Install unknown apps") — this is normal for APKs installed outside the Play Store.
 3. Tap **Install** and open **Vyapar Saathi**.
 
-## First run — point the app at your server
+## First run — just log in
 
-The APK does not know your server address in advance. On first launch (and on the login
-screen afterwards):
-
-1. Enter the server address once — e.g. `https://vyapar-saathi.onrender.com` (cloud) or
-   `http://192.168.1.5:5050` (local PC on the same Wi-Fi).
-2. Tap **Test** — you should see the green "connected" confirmation.
-3. Log in with your username and password.
-
-The address is remembered on that phone, so you only do this once. See
-[SERVER.md](SERVER.md) for how to set up the server itself.
+The server address (`https://vyapar-saathi-4ucf.onrender.com`) is **baked into the APK**,
+so there is no address to enter — open the app and log in with your username and password.
+The login is remembered on that phone (stored in durable native storage), so the next
+launch opens straight into the POS, online or offline. See [SERVER.md](SERVER.md) for how
+to set up the server itself.
 
 ## Offline behaviour
 
@@ -42,8 +37,8 @@ and no browser UI.
 
 ## Updating the app
 
-Install the new APK over the old one (same signature) — your login, server address and
-offline queue are kept.
+Install the new APK over the old one (same signature) — your login and offline queue are
+kept.
 
 ## Rebuilding the APK from source
 

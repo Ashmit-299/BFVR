@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
-import { getApiBase, needsServerSetup } from '../lib/api.js';
-import ServerSetup from '../components/ServerSetup.jsx';
 import { IconRestaurant } from '../components/Icons.jsx';
 
 export default function Login() {
@@ -18,10 +16,6 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (needsServerSetup() && !getApiBase()) {
-      setError(t('srv_required'));
-      return;
-    }
     setBusy(true);
     try {
       await login(username, password);
@@ -48,8 +42,6 @@ export default function Login() {
         </div>
         <h1>{t('brand_name')}</h1>
         <p className="login-tag">{t('login_tag')}</p>
-
-        <ServerSetup />
 
         <form onSubmit={submit}>
           <label>{t('login_username')}</label>

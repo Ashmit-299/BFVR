@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { get, post } from '../lib/api.js';
+import { getItem, setItem as setStored } from '../lib/store.js';
 import { useToast } from '../context/ToastContext.jsx';
 import { useLang } from '../context/LangContext.jsx';
 import Bill from '../components/Bill.jsx';
@@ -15,7 +16,7 @@ const CART_STORE = 'bfvr_table_carts'; // { [billKey]: { cart, customer, phone, 
 
 const loadStore = () => {
   try {
-    return JSON.parse(localStorage.getItem(CART_STORE)) || {};
+    return JSON.parse(getItem(CART_STORE)) || {};
   } catch {
     return {};
   }
@@ -29,7 +30,7 @@ export default function POS() {
 
   const [items, setItems] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(MENU_CACHE)) || [];
+      return JSON.parse(getItem(MENU_CACHE)) || [];
     } catch {
       return [];
     }
@@ -68,7 +69,7 @@ export default function POS() {
       if (seq !== menuSeq.current) return; // stale response — a newer load is in flight
       setItems(data.items);
       setCategories(data.categories || []);
-      localStorage.setItem(MENU_CACHE, JSON.stringify(data.items));
+      setStored(MENU_CACHE, JSON.stringify(data.items));
     } catch (err) {
       if (err.status !== 0) toast.push(t('pos_load_err', { err: err.message }), 'error');
     }
@@ -102,7 +103,7 @@ export default function POS() {
   useEffect(() => {
     if (switchingRef.current) return;
     storeRef.current[activeKey] = { cart, customer, phone, discount, meta };
-    localStorage.setItem(CART_STORE, JSON.stringify(storeRef.current));
+    setStored(CART_STORE, JSON.stringify(storeRef.current));
   }, [activeKey, cart, customer, phone, discount, meta]);
 
   const markDirty = () => {
@@ -223,7 +224,7 @@ export default function POS() {
     setMeta({});
     dirtyRef.current = false;
     delete storeRef.current[activeKey];
-    localStorage.setItem(CART_STORE, JSON.stringify(storeRef.current));
+    setStored(CART_STORE, JSON.stringify(storeRef.current));
   };
 
   // ---------- save / close ----------
@@ -274,7 +275,7 @@ export default function POS() {
       };
       if (stillActive) setMeta(savedMeta);
       storeRef.current[key] = { cart, customer, phone, discount, meta: savedMeta };
-      localStorage.setItem(CART_STORE, JSON.stringify(storeRef.current));
+      setStored(CART_STORE, JSON.stringify(storeRef.current));
       if (stillActive) dirtyRef.current = false;
       if (!silent) toast.push(t('pos_saved'), 'success');
       loadTables();
