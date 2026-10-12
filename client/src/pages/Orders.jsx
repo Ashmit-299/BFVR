@@ -35,6 +35,37 @@ export default function Orders() {
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [menuItems, setMenuItems] = useState([]);
+  // bulk delete: selected bills (checkbox column)
+  const [selected, setSelected] = useState(new Set());
+  const selectAll = useCallback((rows) => {
+    setSelected(new Set(rows.map((o) => o.id)));
+  }, []);
+  const toggleSelect = useCallback((id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelected(new Set()), []);
+  const bulkDelete = useCallback(async () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(t('ord_bulk_delete_confirm', { n: selected.size }))) return;
+    let ok = 0;
+    let failed = 0;
+    for (const id of selected) {
+      try {
+        await del(`/api/orders/${id}`, { label: t('ord_bulk_delete') });
+        ok++;
+      } catch {
+        failed++;
+      }
+    }
+    clearSelection();
+    if (ok) toast.push(t('ord_bulk_deleted', { n: ok }), 'success');
+    if (failed) toast.push(t('ord_bulk_failed', { n: failed }), 'error');
+    load();
+  }, [selected, clearSelection, load, toast, t]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -174,6 +205,8 @@ export default function Orders() {
     }
   };
 
+  const isSelected = (o) => selected.has(o.id);
+
   const totals = orders.reduce(
     (a, o) => ({ total: a.total + o.total, paid: a.paid + o.paid, due: a.due + o.due }),
     { total: 0, paid: 0, due: 0 }
@@ -243,6 +276,14 @@ export default function Orders() {
           <table className="table">
             <thead>
               <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    className="check-all"
+                    checked={selected.size === orders.length && selected.size > 0}
+                    onChange={() => selectAll(orders)}
+                  />
+                </th>
                 <th>#</th>
                 <th>{t('col_time')}</th>
                 <th>{t('col_table')}</th>
@@ -257,6 +298,14 @@ export default function Orders() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id}>
+                  <td className="check-col">
+                    <input
+                      type="checkbox"
+                      className="check-row"
+                      checked={isSelected(o)}
+                      onChange={() => toggleSelect(o.id)}
+                    />
+                  </td>
                   <td>
                     <b>{o.number}</b>
                     <div>
@@ -311,7 +360,15 @@ export default function Orders() {
             </tbody>
           </table>
         )}
-      </div>
+      {selected.size > 0 && can('orders:delete') && (
+        <div className="bulk-toolbar">
+          <span>{t('ord_bulk_selected', { n: selected.size })}</span>
+          <button className="btn btn-danger" onClick={bulkDelete}>
+            {t('ord_bulk_delete')} ({selected.size})
+          </button>
+          <button className="btn" onClick={clearSelection}>{t('common_cancel')}</button>
+        </div>
+      )}
 
       {billView && <Bill order={billView} onClose={() => setBillView(null)} />}
 

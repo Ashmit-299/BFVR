@@ -2,6 +2,7 @@ import { Router } from 'express';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Expense from '../models/Expense.js';
+import Setting from '../models/Setting.js';
 import { requireAuth, requirePerm } from '../middleware/auth.js';
 import { canManageRole, ROLES } from '../lib/permissions.js';
 
@@ -128,12 +129,25 @@ router.post('/', async (req, res, next) => {
       passwordHash: await User.hashPassword(password),
       role,
     });
+    // A brand-new account gets its own, completely empty business: a fresh
+    // Setting (openingFloat 0, order numbers from 1, no history) so every new
+    // account starts from a clean dashboard.
+    const freshSetting = await Setting.create({
+      restaurant: { name: '', nameEn: '', tagline: '', address: '', phone: '', upiId: '', gstin: '' },
+      currency: '₹',
+      openingFloat: 0,
+      tableCount: 6,
+      orderSeq: 1,
+    });
+    user.businessId = freshSetting._id;
+    await user.save();
     res.status(201).json({ user: user.toClient() });
   } catch (err) {
     next(err);
   }
 });
 
+// PUT edit a past bill
 router.put('/:id', async (req, res, next) => {
   try {
     // scoped lookup: a user of another business is simply "not found"
