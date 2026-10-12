@@ -48,6 +48,23 @@ export default function Orders() {
     });
   }, []);
   const clearSelection = useCallback(() => setSelected(new Set()), []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (range === 'today') params.set('day', todayKey());
+      else if (range !== 'all') params.set('from', shiftDay(todayKey(), -(Number(range) - 1)));
+      if (status !== 'all') params.set('status', status);
+      if (q.trim()) params.set('q', q.trim());
+      const data = await get(`/api/orders?${params.toString()}`);
+      setOrders(data.orders);
+    } catch (err) {
+      if (err.status !== 0) toast.push(t('ord_load_err', { err: err.message }), 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [range, status, q, toast, t]);
+
   const bulkDelete = useCallback(async () => {
     if (selected.size === 0) return;
     if (!window.confirm(t('ord_bulk_delete_confirm', { n: selected.size }))) return;
@@ -66,23 +83,6 @@ export default function Orders() {
     if (failed) toast.push(t('ord_bulk_failed', { n: failed }), 'error');
     load();
   }, [selected, clearSelection, load, toast, t]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (range === 'today') params.set('day', todayKey());
-      else if (range !== 'all') params.set('from', shiftDay(todayKey(), -(Number(range) - 1)));
-      if (status !== 'all') params.set('status', status);
-      if (q.trim()) params.set('q', q.trim());
-      const data = await get(`/api/orders?${params.toString()}`);
-      setOrders(data.orders);
-    } catch (err) {
-      if (err.status !== 0) toast.push(t('ord_load_err', { err: err.message }), 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [range, status, q, toast, t]);
 
   useEffect(() => {
     load();
@@ -369,6 +369,7 @@ export default function Orders() {
           <button className="btn" onClick={clearSelection}>{t('common_cancel')}</button>
         </div>
       )}
+      </div>
 
       {billView && <Bill order={billView} onClose={() => setBillView(null)} />}
 
